@@ -195,17 +195,11 @@ for the same knowledge.
 
 ### Search Tools (in preference order)
 
-1. `signet_memory_search` — hybrid vector + keyword search (preferred)
+1. `signet_memory_search` — knowledge graph traversal + FTS5 keyword search (preferred)
 2. `memory_search` — alias for the above
 3. `recall` — alias for the above
 
 All three hit the same Signet database. Use whichever is available.
-
-### Embedding Provider (optional)
-
-Vector search (embeddings) is **not required** for this skill. Signet's knowledge graph traversal + FTS5 keyword search cover all skill-mandated search patterns. Evidence from 34 real searches: traversal provides 63.6% of results, vector 20.2% (never ranked #1).
-
-The skill enforces keyword-rich queries with type/scope filters — this eliminates the vocabulary mismatch that vector search exists to solve. Signet's knowledge graph traversal + FTS5 keyword search cover all skill-mandated search patterns without embeddings.
 
 ## Pre-Action Gate (MANDATORY)
 
