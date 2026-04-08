@@ -51,29 +51,42 @@ preflight_check() {
 
 # ── Session Management ────────────────────────────────────────
 
-# Run an OpenCode session with a prompt, capture output and session ID.
-# Usage: run_opencode "your prompt here" [timeout_seconds]
+_PGID=""
+
 run_opencode() {
     local prompt="$1"
     local timeout="${2:-$TEST_TIMEOUT}"
     local output
+    local bg_pid
+    local tmpfile="/tmp/_signet_test_output_$$.json"
 
-    output=$(timeout "$timeout" opencode run "$prompt" \
+    setsid timeout --kill-after=10 "$timeout" \
+        opencode run "$prompt" \
         --format json \
         --title "signet-first-test-$(date +%s)" \
         --dir "$SKILL_DIR" \
-        2>/dev/null) || true
+        2>/dev/null > "$tmpfile" &
+    bg_pid=$!
+    _PGID=$(ps -o pgid= -p "$bg_pid" 2>/dev/null | tr -d ' ')
 
-    # Extract session ID from JSON output
+    wait "$bg_pid" 2>/dev/null || true
+    output=$(cat "$tmpfile" 2>/dev/null)
+    rm -f "$tmpfile"
+
+    if [ -n "$_PGID" ] && [ "$_PGID" != "$$" ]; then
+        kill -TERM -"$_PGID" 2>/dev/null || true
+        sleep 1
+        kill -9 -"$_PGID" 2>/dev/null || true
+    fi
+    _PGID=""
+
     _SESSION_ID=$(echo "$output" | grep -oP '"sessionID"\s*:\s*"[^"]*"' | head -1 | grep -oP '"[^"]*"$' | tr -d '"')
 
-    # If --format json didn't give us a session ID, try from the DB (most recent)
     if [ -z "$_SESSION_ID" ]; then
         _SESSION_ID=$(sqlite3 "$OPENCODE_DB" \
             "SELECT id FROM session ORDER BY time_created DESC LIMIT 1;" 2>/dev/null)
     fi
 
-    # Return the text output (strip JSON framing for assertion readability)
     echo "$output"
 }
 

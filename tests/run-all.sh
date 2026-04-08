@@ -17,6 +17,9 @@ echo -e "${BOLD}║   signet-first skill test suite      ║${NC}"
 echo -e "${BOLD}╚══════════════════════════════════════╝${NC}"
 echo ""
 
+trap 'echo -e "\n${RED}Interrupted — killing orphan processes${NC}"; pkill -P $$ 2>/dev/null; exit 130' INT TERM
+trap 'pkill -P $$ 2>/dev/null' EXIT
+
 # Pre-flight (source helpers just for the check, don't pollute globals)
 (
     source "$TESTS_DIR/test-helpers.sh"
@@ -26,7 +29,9 @@ echo ""
 # Discover test files
 test_files=()
 for f in "$TESTS_DIR"/test-*.sh; do
-    [ -f "$f" ] && test_files+=("$f")
+    [ -f "$f" ] || continue
+    [[ "$(basename "$f")" == "test-helpers.sh" ]] && continue
+    test_files+=("$f")
 done
 
 if [ "${#test_files[@]}" -eq 0 ]; then
@@ -42,19 +47,27 @@ suite_pass=0
 suite_fail=0
 suite_results=()
 
+SUITE_TIMEOUT="${SUITE_TIMEOUT:-300}"
+
 for f in "${test_files[@]}"; do
     suite_name=$(basename "$f" .sh)
     echo -e "${BOLD}▶ Running: ${suite_name}${NC}"
     echo ""
 
-    if bash "$f"; then
+    if timeout --foreground --kill-after=10 "$SUITE_TIMEOUT" bash "$f"; then
         suite_pass=$((suite_pass + 1))
         suite_results+=("${GREEN}PASS${NC}  $suite_name")
     else
+        exit_code=$?
+        if [ "$exit_code" -eq 124 ]; then
+            echo -e "    ${RED}TIMEOUT${NC} suite exceeded ${SUITE_TIMEOUT}s"
+        fi
         suite_fail=$((suite_fail + 1))
         suite_results+=("${RED}FAIL${NC}  $suite_name")
     fi
 
+    pkill -P $$ 2>/dev/null || true
+    sleep 2
     echo ""
 done
 
