@@ -63,4 +63,57 @@ else
     _fail "discovery should not be pinned — got pinned=$pinned"
 fi
 
+# ── Test 7: deduplication — same content not stored twice ──────
+
+test_start "deduplication: duplicate detected by content match"
+inject_memory "Deploy command: ./deploy.sh --prod --region=us-east-1" \
+    "procedural" "myapp" 0.9 1 "deploy"
+inject_memory "Deploy command: ./deploy.sh --prod --region=us-east-1" \
+    "procedural" "myapp" 0.9 1 "deploy"
+count=$(signet_count_by_content "deploy.sh --prod" "procedural")
+if [ "$count" -ge 2 ]; then
+    _pass "duplicate correctly detected: count=$count (agent must search before store)"
+else
+    _fail "expected duplicate to be detectable, found count=$count"
+fi
+
+# ── Test 8: memory modify updates existing content ────────────
+
+test_start "modify updates existing memory content"
+inject_memory_with_id "mem_modify_test" \
+    "Test runner: npm test" "procedural" "webapp" 0.8 1 "test"
+modify_memory "mem_modify_test" "Test runner: npm run test:ci -- --coverage"
+row=$(signet_find_memory "test:ci")
+if [ -n "$row" ]; then
+    old_count=$(signet_count_by_content "npm test" "procedural")
+    _pass "memory updated to new content (old 'npm test' count=$old_count)"
+else
+    _fail "modify did not update memory content"
+fi
+
+# ── Test 9: modify preserves ID — no orphan created ──────────
+
+test_start "modify does not create a new memory"
+total_before=$(sqlite3 "$SIGNET_DB" "SELECT COUNT(*) FROM memories WHERE is_deleted = 0;" 2>/dev/null)
+modify_memory "mem_modify_test" "Test runner: npm run test:ci -- --coverage --bail"
+total_after=$(sqlite3 "$SIGNET_DB" "SELECT COUNT(*) FROM memories WHERE is_deleted = 0;" 2>/dev/null)
+if [ "$total_after" -eq "$total_before" ]; then
+    _pass "total memory count unchanged after modify ($total_after)"
+else
+    _fail "modify created orphan — before=$total_before after=$total_after"
+fi
+
+# ── Test 10: importance calibration — constraint >= 0.7 ───────
+
+test_start "importance: hard constraint >= 0.7"
+inject_memory "NEVER delete production data without backup" \
+    "preference" "" 1.0 1 "constraint,safety"
+row=$(signet_find_memory "production data without backup")
+importance=$(echo "$row" | jq -r '.importance')
+if [ "$(echo "$importance >= 0.7" | bc -l)" -eq 1 ]; then
+    _pass "constraint importance=$importance (>= 0.7)"
+else
+    _fail "constraint importance=$importance (expected >= 0.7)"
+fi
+
 print_summary

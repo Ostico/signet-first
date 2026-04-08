@@ -32,7 +32,7 @@ NC='\033[0m'
 
 preflight_check() {
     local missing=0
-    for cmd in sqlite3 jq; do
+    for cmd in sqlite3 jq bc; do
         if ! command -v "$cmd" &>/dev/null; then
             echo -e "${RED}MISSING: $cmd${NC}"
             missing=1
@@ -236,6 +236,50 @@ inject_memory() {
         INSERT INTO memories (id, content, type, scope, importance, pinned, tags, is_deleted)
         VALUES ('$mem_id', '$escaped_content', '$mem_type', $([ -n "$scope" ] && echo "'$scope'" || echo "NULL"), $importance, $pinned, '$tags', 0);
     "
+}
+
+# Inject a memory with explicit ID (for update/modify tests).
+# Usage: inject_memory_with_id "mem_001" "content" "type" "scope" importance pinned "tags"
+inject_memory_with_id() {
+    local mem_id="$1"
+    local content="$2"
+    local mem_type="${3:-fact}"
+    local scope="${4:-}"
+    local importance="${5:-0.5}"
+    local pinned="${6:-0}"
+    local tags="${7:-}"
+
+    local escaped_content
+    escaped_content=$(echo "$content" | sed "s/'/''/g")
+
+    sqlite3 "$SIGNET_DB" "
+        INSERT INTO memories (id, content, type, scope, importance, pinned, tags, is_deleted)
+        VALUES ('$mem_id', '$escaped_content', '$mem_type', $([ -n "$scope" ] && echo "'$scope'" || echo "NULL"), $importance, $pinned, '$tags', 0);
+    "
+}
+
+# Simulate signet_memory_modify — update an existing memory's content.
+# Usage: modify_memory "mem_001" "new content"
+modify_memory() {
+    local mem_id="$1"
+    local new_content="$2"
+
+    local escaped_content
+    escaped_content=$(echo "$new_content" | sed "s/'/''/g")
+
+    sqlite3 "$SIGNET_DB" "
+        UPDATE memories SET content = '$escaped_content' WHERE id = '$mem_id';
+    "
+}
+
+# Count memories matching a content pattern (for dedup checks).
+# Usage: count=$(signet_count_by_content "pattern")
+signet_count_by_content() {
+    local content_pattern="$1"
+    local mem_type="${2:-}"
+    local where="is_deleted = 0 AND content LIKE '%$content_pattern%'"
+    [ -n "$mem_type" ] && where="$where AND type = '$mem_type'"
+    sqlite3 "$SIGNET_DB" "SELECT COUNT(*) FROM memories WHERE $where;" 2>/dev/null
 }
 
 # ── Tool Call Inspection ──────────────────────────────────────
