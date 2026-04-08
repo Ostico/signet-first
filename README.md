@@ -6,7 +6,7 @@ falling back to markdown files.
 
 ## Quick Start
 
-One command installs everything — Ollama, nomic-embed-text, Signet, and the skill:
+One command installs Signet and the skill:
 
 ```bash
 curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/install.sh | bash
@@ -40,9 +40,9 @@ the same fallback won't repeat.
 
 ## Why
 
-Signet's SQLite database with vector embeddings, knowledge graph entities, and hybrid search is
-a better memory backend than flat markdown files. But agents default to reading MEMORY.md and
-other markdown files because that's what gets loaded into context at session start.
+Signet's SQLite database with knowledge graph entities, FTS5 keyword search, and structured
+metadata is a better memory backend than flat markdown files. But agents default to reading
+MEMORY.md and other markdown files because that's what gets loaded into context at session start.
 
 This skill inverts the priority: Signet database first, markdown files as fallback only. Each
 fallback warning makes gaps visible so you can track how often the agent still needs files.
@@ -50,8 +50,10 @@ fallback warning makes gaps visible so you can track how often the agent still n
 ## Requirements
 
 - [Signet](https://github.com/Signet-AI/signetai) installed and running (`signet status` should show healthy)
-- An embedding provider configured (Ollama with `nomic-embed-text`, or OpenAI)
 - A Signet-compatible harness: [OpenCode](https://opencode.ai), Claude Code, or Codex
+
+> No embedding provider required. The skill's keyword-rich queries with type/scope filters
+> work fully with Signet's knowledge graph traversal + FTS5 keyword search.
 
 > **New to Signet?** The [Quick Start](#quick-start) one-liner handles all of this.
 > For step-by-step details, see [SETUP.md](SETUP.md).
@@ -64,17 +66,14 @@ fallback warning makes gaps visible so you can track how often the agent still n
 curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/install.sh | bash
 ```
 
-The installer auto-detects your harness (OpenCode, Claude Code, Codex) and installs Ollama +
-nomic-embed-text + Signet + the skill. Skips anything already installed.
+The installer auto-detects your harness (OpenCode, Claude Code, Codex) and installs
+Signet + the skill. Skips anything already installed.
 
 **Options:**
 
 ```bash
 # Force a specific harness
 curl -sL .../install.sh | HARNESS=claude-code bash
-
-# Skip Ollama (you already have it)
-curl -sL .../install.sh | SKIP_OLLAMA=1 bash
 
 # Skip Signet (you already have it)
 curl -sL .../install.sh | SKIP_SIGNET=1 bash

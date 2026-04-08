@@ -1,7 +1,7 @@
 # signet-first — Test Results
 
 **Date:** 2026-04-08
-**Environment:** OpenCode 1.3.17, Signet 0.98.0, Ollama 0.20.3 (nomic-embed-text)
+**Environment:** OpenCode 1.3.17, Signet 0.98.0
 **Memory DB:** ~/.agents/memory/memories.db (~80 memories at test time)
 
 ## Summary

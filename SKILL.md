@@ -42,7 +42,7 @@ signet_memory_store(
 | `decision`   | A choice that was made (by user or agent)             | "Chose read-through caching over write-through for DaoCacheTrait"     |
 | `preference` | User preference, style choice, workflow habit         | "User prefers conventional-commit with emoji prefix"                  |
 | `rationale`  | The WHY behind a decision                             | "Picked WAL mode because daemon needs concurrent reads during writes" |
-| `discovery`  | New finding about codebase, tool, or library          | "nomic-embed-text is 137M params, limited on code-specific queries"   |
+| `discovery`  | New finding about codebase, tool, or library          | "FTS5 keyword search covers all skill queries without vector embeddings" |
 | `episodic`   | Session-specific event worth remembering              | "Docker validation of install.sh passed all checks on Ubuntu 24.04"   |
 | `semantic`   | General knowledge synthesized from multiple sources   | "OSS agent memory systems lack frequency-based auto-promotion"        |
 | `daily-log`  | End-of-session summary of what was accomplished       | "Completed cross-platform setup recipe, 5 commits on signet-first"    |
@@ -200,6 +200,12 @@ for the same knowledge.
 3. `recall` — alias for the above
 
 All three hit the same Signet database. Use whichever is available.
+
+### Embedding Provider (optional)
+
+Vector search (embeddings) is **not required** for this skill. Signet's knowledge graph traversal + FTS5 keyword search cover all skill-mandated search patterns. Evidence from 34 real searches: traversal provides 63.6% of results, vector 20.2% (never ranked #1).
+
+The skill enforces keyword-rich queries with type/scope filters — this eliminates the vocabulary mismatch that vector search exists to solve. Signet's knowledge graph traversal + FTS5 keyword search cover all skill-mandated search patterns without embeddings.
 
 ## Pre-Action Gate (MANDATORY)
 

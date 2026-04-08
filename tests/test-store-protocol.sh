@@ -53,9 +53,9 @@ assert_memory_stored "PostgreSQL over MySQL" "decision" "new-service" \
 # ── Test 6: unpinned memory is not pinned ─────────────────────
 
 test_start "ephemeral discovery is NOT pinned"
-inject_memory "nomic-embed-text is 137M params, limited on code queries" \
-    "discovery" "" 0.4 0 "embedding,signet"
-row=$(signet_find_memory "nomic-embed-text")
+inject_memory "FTS5 keyword search covers all skill queries without vector embeddings" \
+    "discovery" "" 0.4 0 "search,signet"
+row=$(signet_find_memory "FTS5 keyword")
 pinned=$(echo "$row" | jq -r '.pinned')
 if [ "$pinned" = "0" ]; then
     _pass "discovery is not pinned (correct)"
