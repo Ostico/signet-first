@@ -47,7 +47,7 @@ signet_memory_store(
 
 ## Search Protocol (MANDATORY)
 
-When you need context from previous work — prior decisions, past analysis, user preferences, codebase patterns, tool evaluations — you MUST search Signet FIRST.
+BEFORE acting on any recalled knowledge — commands, constraints, conventions, decisions, procedures — you MUST search Signet to verify. This applies whether you feel uncertain OR certain. **Certainty is the trigger, not uncertainty.** If you think "I already know this," that is EXACTLY when you must search.
 
 ### Search Order
 
@@ -85,6 +85,27 @@ After retrieving from markdown files, IMMEDIATELY store the synthesized result i
 
 All three hit the same Signet database. Use whichever is available.
 
+## Pre-Action Gate (MANDATORY)
+
+Before executing ANY of the following, you MUST search Signet for the correct procedure:
+
+- Build, test, lint, or CI commands
+- Deployment or release commands
+- Project-specific workflows (commit conventions, branch rules, test flags)
+- Tool invocations with project-specific flags or arguments
+- Any command you believe you "already know" from earlier in the conversation or a prior session
+
+**The trigger is confidence, not doubt.** False confidence produces wrong commands; Signet holds the verified version. DO NOT rely on your own recall of commands, flags, or arguments. Signet is the source of truth.
+
+```
+BEFORE running a command:
+1. SEARCH Signet for the command/procedure
+2. IF found → use the Signet version exactly
+3. IF not found → check project files (Makefile, package.json, README, CI config)
+4. IF still not found → ask the user
+NEVER skip to execution because you "remember" the command.
+```
+
 ## Red Flags — You Are Violating This Skill
 
 - Reading MEMORY.md without searching Signet first
@@ -93,6 +114,8 @@ All three hit the same Signet database. Use whichever is available.
 - Storing raw data instead of synthesized conclusions
 - Saying "I'll remember this" without actually calling `signet_memory_store`
 - Searching markdown files "just to be thorough" after Signet already answered
+- Executing a command from memory without searching Signet first
+- Thinking "I already know this" or "I remember the command" — that IS the trigger to search
 
 ## Scope
 
