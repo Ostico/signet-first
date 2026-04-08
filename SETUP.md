@@ -1,7 +1,8 @@
 # Prerequisites Setup — Signet + Ollama + nomic-embed-text
 
 > **Audience:** AI agents performing automated installation, or humans following along.  
-> **Target:** Ubuntu 24.04 LTS (Debian-based Linux)  
+> **Target:** Ubuntu 24.04 LTS (Debian-based Linux) / macOS 14+ (Sonoma/Sequoia)  
+> **Windows:** Not officially supported by Signet yet — use WSL (see note below)  
 > **Time:** ~10 minutes  
 > **Tested:** Signet 0.98.0, Ollama 0.20.3, Node 22, nomic-embed-text 274 MB
 
@@ -36,7 +37,9 @@ Signet requires Node.js 20+. We recommend Node 22 via nvm.
 ```bash
 # Install nvm
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
-source ~/.bashrc
+
+# Load nvm (Linux: ~/.bashrc, macOS: ~/.zshrc)
+source ~/."${SHELL##*/}rc"
 
 # Install Node 22
 nvm install 22
@@ -60,11 +63,14 @@ npm --version    # Expected: 10.x.x
 Ollama runs embedding models locally. No data leaves your machine.
 
 ```bash
-# Install Ollama
-curl -fsSL https://ollama.ai/install.sh | sh
+# Install Ollama (works on both Linux and macOS — the script detects your OS)
+curl -fsSL https://ollama.com/install.sh | sh
 
 # Start the service (if not auto-started)
+# Linux:
 systemctl --user start ollama 2>/dev/null || ollama serve &
+# macOS: the installer launches Ollama.app automatically.
+# If it didn't start: open -a Ollama
 
 # Wait for startup
 sleep 5
@@ -105,7 +111,7 @@ The Signet daemon requires [Bun](https://bun.sh) as its runtime:
 
 ```bash
 curl -fsSL https://bun.sh/install | bash
-source ~/.bashrc
+source ~/."${SHELL##*/}rc"
 ```
 
 Then install Signet:
@@ -338,10 +344,10 @@ methods (manual copy, CLI, or agent self-install).
 
 | Problem                            | Solution                                                    |
 |------------------------------------|-------------------------------------------------------------|
-| `ollama: command not found`        | Re-run `curl -fsSL https://ollama.ai/install.sh \| sh`     |
-| Ollama not responding on :11434    | `systemctl --user start ollama` or `ollama serve &`         |
+| `ollama: command not found`        | Re-run `curl -fsSL https://ollama.com/install.sh \| sh`     |
+| Ollama not responding on :11434    | Linux: `systemctl --user start ollama` or `ollama serve &`; macOS: `open -a Ollama` |
 | `nomic-embed-text` not in list     | `ollama pull nomic-embed-text`                              |
-| `signet: command not found`        | `npm install -g signetai` then `source ~/.bashrc`           |
+| `signet: command not found`        | `npm install -g signetai` then `source ~/."${SHELL##*/}rc"` |
 | Signet daemon not running          | `signet daemon start`                                       |
 | `signet.mjs` missing in plugins    | `signet sync` then restart your harness                     |
 | Embedding gaps after storing       | `signet embed backfill`                                     |
@@ -357,7 +363,7 @@ methods (manual copy, CLI, or agent self-install).
 # Ollama
 ollama list                      # Show installed models
 ollama pull nomic-embed-text     # Install/update embedding model
-ollama serve                     # Start Ollama (if not auto-started)
+ollama serve                     # Start Ollama (Linux; macOS: open -a Ollama)
 
 # Signet
 signet status                    # Check daemon health
@@ -374,5 +380,25 @@ signet recall "search query"     # Search memories from CLI
 
 ---
 
+---
+
+## Windows (Not Officially Supported)
+
+> ⚠️ **Untested.** Signet does not officially support native Windows yet (Windows support is
+> planned). The recommended approach for Windows users is **WSL** (Windows Subsystem for Linux),
+> where all Linux instructions above work as-is.
+
+If you want to try native Windows without WSL, the individual tools have Windows installers:
+
+| Tool      | Native Windows Install                                              |
+|-----------|---------------------------------------------------------------------|
+| Node.js   | Use [nvm-windows](https://github.com/coreybutler/nvm-windows) (separate project from nvm) |
+| Ollama    | PowerShell: `irm https://ollama.com/install.ps1 \| iex` or download `OllamaSetup.exe` |
+| Bun       | PowerShell: `powershell -c "irm bun.sh/install.ps1\|iex"`          |
+| Signet    | **Not supported on native Windows** — use WSL                       |
+
+---
+
 *Extracted from a running Ubuntu 24.04 workstation with Signet 0.98.0, Ollama 0.20.3, and
-nomic-embed-text. All commands, paths, and configurations verified against a live installation.*
+nomic-embed-text. macOS compatibility verified from official docs. All commands, paths, and
+configurations verified against a live installation.*

@@ -1,6 +1,6 @@
 # signet-first
 
-A [Signet](https://github.com/signetai/signet) skill that forces AI agents to use Signet as their
+A [Signet](https://github.com/Signet-AI/signetai) skill that forces AI agents to use Signet as their
 primary memory system — storing session knowledge in the Signet database and searching it before
 falling back to markdown files.
 
@@ -49,7 +49,7 @@ fallback warning makes gaps visible so you can track how often the agent still n
 
 ## Requirements
 
-- [Signet](https://github.com/signetai/signet) installed and running (`signet status` should show healthy)
+- [Signet](https://github.com/Signet-AI/signetai) installed and running (`signet status` should show healthy)
 - An embedding provider configured (Ollama with `nomic-embed-text`, or OpenAI)
 - A Signet-compatible harness: [OpenCode](https://opencode.ai), Claude Code, or Codex
 

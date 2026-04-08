@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # signet-first — full setup installer
 #
+# Platforms: Linux (tested), macOS (tested), Windows (not supported — use WSL)
+#
 # Installs EVERYTHING from scratch:
 #   1. Ollama + nomic-embed-text (local embeddings)
 #   2. Signet (AI memory system)
@@ -80,12 +82,12 @@ install_ollama() {
     ok "Ollama already installed ($(ollama --version 2>/dev/null || echo 'unknown version'))"
   else
     echo "  Installing Ollama..."
-    curl -fsSL https://ollama.ai/install.sh | sh 2>&1 | tail -3
+    curl -fsSL https://ollama.com/install.sh | sh 2>&1 | tail -3
     if command -v ollama &> /dev/null; then
       ok "Ollama installed"
     else
       fail "Ollama installation failed"
-      echo "  Try manually: curl -fsSL https://ollama.ai/install.sh | sh"
+      echo "  Try manually: curl -fsSL https://ollama.com/install.sh | sh"
       return 1
     fi
   fi
@@ -95,7 +97,11 @@ install_ollama() {
     ok "Ollama is running"
   else
     echo "  Starting Ollama..."
-    systemctl --user start ollama 2>/dev/null || nohup ollama serve > /dev/null 2>&1 &
+    if [ "$(uname -s)" = "Darwin" ]; then
+      open -a Ollama 2>/dev/null || nohup ollama serve > /dev/null 2>&1 &
+    else
+      systemctl --user start ollama 2>/dev/null || nohup ollama serve > /dev/null 2>&1 &
+    fi
     # Wait up to 15 seconds
     for i in $(seq 1 15); do
       if curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; then break; fi
@@ -148,7 +154,7 @@ check_node() {
 
   echo "  Install Node.js 22:"
   echo "    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash"
-  echo "    source ~/.bashrc && nvm install 22"
+  echo "    source ~/.\"\${SHELL##*/}rc\" && nvm install 22"
   return 1
 }
 
