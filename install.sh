@@ -139,6 +139,7 @@ install_signet() {
       --harness "$HARNESS" \
       --deployment-type local \
       --extraction-provider "$HARNESS" \
+      --embedding-provider none \
       --skip-git \
       2>&1 | tail -5
     if [ -f "$HOME/.agents/agent.yaml" ]; then

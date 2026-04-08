@@ -155,12 +155,13 @@ npx -y skills add ostico/signet-first --global --yes --copy
 
 Check [CHANGELOG.md](CHANGELOG.md) for what changed between versions.
 
-## Test Results
+## Test Suite
 
-See [TEST-RESULTS.md](TEST-RESULTS.md) — 8/8 tests passed across session restart boundary.
+4 suites, 30 fixture-based assertions, 0 failures, <1s execution, zero API calls.
 
-Key finding: Signet's traversal engine inflates scores for broad entity matches. The skill
-uses semantic relevance judgment instead of score thresholds to avoid false positives.
+```bash
+bash tests/run-all.sh
+```
 
 ## License
 

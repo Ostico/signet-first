@@ -88,19 +88,7 @@ which signet-mcp   # Expected: same bin directory
 signet setup
 ```
 
-The wizard asks ~12 questions. Recommended answers:
-
-| Question               | Answer                            |
-|------------------------|-----------------------------------|
-| Agent Name             | `Smart-Agent` (or your own name)  |
-| Harnesses              | Select your harness (e.g. **opencode**, **claude-code**) |
-| Description            | `Personal AI assistant`           |
-| Deployment context     | `local`                           |
-| Embedding Provider     | Accept default                    |
-| Advanced Settings      | Accept defaults                   |
-| Import                 | Skip                              |
-| Git                    | Yes (recommended)                 |
-| Launch Dashboard       | Optional                          |
+The wizard asks several questions. Accept defaults for embedding and advanced settings.
 
 Or run non-interactively:
 

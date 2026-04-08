@@ -175,8 +175,7 @@ If the first search returns irrelevant or too many broad matches:
 4. IF still noisy after 2 refinements → FALLBACK to files (with warning below)
 ```
 
-Do NOT give up after one noisy search. Do NOT treat a high-score irrelevant result as an answer — Signet's traversal
-engine inflates scores for broad entity matches. **You must judge content relevance, not score.**
+Do NOT give up after one noisy search.
 
 ### Fallback Warning (MANDATORY — NO EXCEPTIONS)
 
