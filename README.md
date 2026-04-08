@@ -4,6 +4,22 @@ A [Signet](https://github.com/signetai/signet) skill that forces AI agents to us
 primary memory system — storing session knowledge in the Signet database and searching it before
 falling back to markdown files.
 
+## Quick Start
+
+One command installs everything — Ollama, nomic-embed-text, Signet, and the skill:
+
+```bash
+curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/install.sh | bash
+```
+
+Already have Signet? Install just the skill:
+
+```bash
+curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/install.sh | SKILL_ONLY=1 bash
+```
+
+Then restart your agent session.
+
 ## What It Does
 
 **Store protocol** — After every investigation, analysis, decision, or discovery, the agent
@@ -37,54 +53,66 @@ fallback warning makes gaps visible so you can track how often the agent still n
 - An embedding provider configured (Ollama with `nomic-embed-text`, or OpenAI)
 - A Signet-compatible harness: [OpenCode](https://opencode.ai), Claude Code, or Codex
 
-> **New to Signet?** See [SETUP.md](SETUP.md) for a complete installation guide covering
-> Signet, Ollama, and nomic-embed-text from scratch. An AI agent can follow it autonomously.
+> **New to Signet?** The [Quick Start](#quick-start) one-liner handles all of this.
+> For step-by-step details, see [SETUP.md](SETUP.md).
 
 ## Installation
 
-### Option A — Manual (any harness)
-
-Copy `SKILL.md` into your skills directory:
+### One-liner (installs everything)
 
 ```bash
-# For OpenCode
+curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/install.sh | bash
+```
+
+The installer auto-detects your harness (OpenCode, Claude Code, Codex) and installs Ollama +
+nomic-embed-text + Signet + the skill. Skips anything already installed.
+
+**Options:**
+
+```bash
+# Force a specific harness
+curl -sL .../install.sh | HARNESS=claude-code bash
+
+# Skip Ollama (you already have it)
+curl -sL .../install.sh | SKIP_OLLAMA=1 bash
+
+# Skip Signet (you already have it)
+curl -sL .../install.sh | SKIP_SIGNET=1 bash
+
+# Just the skill, nothing else
+curl -sL .../install.sh | SKILL_ONLY=1 bash
+```
+
+### Alternative: Skills CLI
+
+```bash
+npx -y skills add ostico/signet-first --global --yes --copy
+```
+
+### Alternative: Manual copy
+
+```bash
+# OpenCode
 mkdir -p ~/.config/opencode/skills/signet-first
 curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/SKILL.md \
   -o ~/.config/opencode/skills/signet-first/SKILL.md
 
-# For Claude Code
+# Claude Code
 mkdir -p ~/.claude/skills/signet-first
 curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/SKILL.md \
   -o ~/.claude/skills/signet-first/SKILL.md
 
-# For Codex / other harnesses using ~/.agents/skills/
+# Codex
 mkdir -p ~/.agents/skills/signet-first
 curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/SKILL.md \
   -o ~/.agents/skills/signet-first/SKILL.md
 ```
 
-Restart your agent session. The skill activates automatically on every session.
-
-### Option B — Skills CLI
-
-```bash
-npx skills add ostico/signet-first
-```
-
-### Option C — Agent self-install
+### Alternative: Agent self-install
 
 Ask your agent:
 
 > Install the signet-first skill from `https://github.com/ostico/signet-first`
-
-Or paste these instructions directly:
-
-```
-Download SKILL.md from https://raw.githubusercontent.com/ostico/signet-first/master/SKILL.md
-and save it to ~/.config/opencode/skills/signet-first/SKILL.md (for OpenCode)
-or ~/.claude/skills/signet-first/SKILL.md (for Claude Code).
-Then restart the session.
-```
 
 ## Verification
 

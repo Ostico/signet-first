@@ -101,6 +101,15 @@ Then during Signet setup (Step 3), choose `openai` as the embedding provider and
 
 ## Step 3 — Install Signet
 
+The Signet daemon requires [Bun](https://bun.sh) as its runtime:
+
+```bash
+curl -fsSL https://bun.sh/install | bash
+source ~/.bashrc
+```
+
+Then install Signet:
+
 ```bash
 npm install -g signetai
 ```
@@ -108,6 +117,7 @@ npm install -g signetai
 **Verify:**
 
 ```bash
+bun --version      # Expected: 1.x.x
 signet --version   # Expected: 0.98.0 (or newer)
 which signet       # Expected: ~/.nvm/versions/node/v22.x.x/bin/signet
 which signet-mcp   # Expected: same bin directory

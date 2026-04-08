@@ -1,25 +1,51 @@
 #!/usr/bin/env bash
-# signet-first skill installer
-# Run this script OR paste it into your agent's terminal to install the skill.
+# signet-first — full setup installer
 #
-# Prerequisites:
-#   - Signet installed and running (signet status)
-#   - A Signet-compatible harness (OpenCode, Claude Code, or Codex)
+# Installs EVERYTHING from scratch:
+#   1. Ollama + nomic-embed-text (local embeddings)
+#   2. Signet (AI memory system)
+#   3. signet-first skill (Signet-first memory protocol)
 #
-# Usage:
+# Usage (one-liner):
 #   curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/install.sh | bash
 #
-# Or with a specific harness:
-#   HARNESS=claude-code curl -sL ... | bash
-#   HARNESS=codex curl -sL ... | bash
+# Options (environment variables):
+#   HARNESS=opencode|claude-code|codex   Force harness (default: auto-detect)
+#   SKIP_OLLAMA=1                        Skip Ollama install (already have it)
+#   SKIP_SIGNET=1                        Skip Signet install (already have it)
+#   SKILL_ONLY=1                         Skip everything, just install the skill
+#
+# Examples:
+#   curl -sL .../install.sh | bash                          # Full install
+#   curl -sL .../install.sh | SKILL_ONLY=1 bash             # Just the skill
+#   curl -sL .../install.sh | HARNESS=claude-code bash      # Force Claude Code
+#   curl -sL .../install.sh | SKIP_OLLAMA=1 bash            # Already have Ollama
 
-set -euo pipefail
+set -uo pipefail
 
 REPO="https://raw.githubusercontent.com/ostico/signet-first/master"
 HARNESS="${HARNESS:-auto}"
+SKIP_OLLAMA="${SKIP_OLLAMA:-0}"
+SKIP_SIGNET="${SKIP_SIGNET:-0}"
+SKILL_ONLY="${SKILL_ONLY:-0}"
 
-# Detect harness if not specified
-if [ "$HARNESS" = "auto" ]; then
+# Colors (disabled if not a terminal)
+if [ -t 1 ]; then
+  GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; BOLD='\033[1m'; NC='\033[0m'
+else
+  GREEN=''; YELLOW=''; RED=''; BOLD=''; NC=''
+fi
+
+ok()   { echo -e "  ${GREEN}✓${NC} $1"; }
+warn() { echo -e "  ${YELLOW}⚠${NC} $1"; }
+fail() { echo -e "  ${RED}✗${NC} $1"; }
+step() { echo -e "\n${BOLD}[$1]${NC} $2"; }
+
+# ─── Harness detection ────────────────────────────────────────────────────────
+
+detect_harness() {
+  if [ "$HARNESS" != "auto" ]; then return; fi
+
   if [ -d "$HOME/.config/opencode" ]; then
     HARNESS="opencode"
   elif [ -d "$HOME/.claude" ]; then
@@ -27,57 +53,276 @@ if [ "$HARNESS" = "auto" ]; then
   elif [ -d "$HOME/.agents/skills" ]; then
     HARNESS="codex"
   else
-    echo "ERROR: Could not detect harness. Set HARNESS=opencode|claude-code|codex"
-    exit 1
+    # No harness detected — default to opencode (most common)
+    HARNESS="opencode"
+    warn "No harness directory found — defaulting to opencode"
   fi
-fi
+}
 
-# Set skills directory based on harness
-case "$HARNESS" in
-  opencode)
-    SKILLS_DIR="$HOME/.config/opencode/skills/signet-first"
-    ;;
-  claude-code)
-    SKILLS_DIR="$HOME/.claude/skills/signet-first"
-    ;;
-  codex)
-    SKILLS_DIR="$HOME/.agents/skills/signet-first"
-    ;;
-  *)
-    echo "ERROR: Unknown harness '$HARNESS'. Use opencode|claude-code|codex"
-    exit 1
-    ;;
-esac
+skills_dir() {
+  case "$HARNESS" in
+    opencode)    echo "$HOME/.config/opencode/skills/signet-first" ;;
+    claude-code) echo "$HOME/.claude/skills/signet-first" ;;
+    codex)       echo "$HOME/.agents/skills/signet-first" ;;
+    *)           echo "$HOME/.config/opencode/skills/signet-first" ;;
+  esac
+}
 
-echo "Installing signet-first skill for $HARNESS..."
-echo "Target: $SKILLS_DIR"
+# ─── Step 1: Ollama + nomic-embed-text ────────────────────────────────────────
 
-# Create directory and download
-mkdir -p "$SKILLS_DIR"
-curl -sL "$REPO/SKILL.md" -o "$SKILLS_DIR/SKILL.md"
+install_ollama() {
+  if [ "$SKILL_ONLY" = "1" ] || [ "$SKIP_OLLAMA" = "1" ]; then return 0; fi
 
-# Verify
-if [ -f "$SKILLS_DIR/SKILL.md" ]; then
-  echo "OK: signet-first installed at $SKILLS_DIR/SKILL.md"
-  echo ""
-  echo "Restart your agent session to activate the skill."
-  echo "The skill triggers automatically on every session."
-else
-  echo "ERROR: Installation failed — SKILL.md not found at $SKILLS_DIR/SKILL.md"
-  exit 1
-fi
+  step "1/4" "Ollama + nomic-embed-text"
 
-# Check Signet health
-if command -v signet &> /dev/null; then
-  echo ""
-  echo "Checking Signet..."
-  if signet status &> /dev/null; then
-    echo "OK: Signet daemon is running."
+  # Check if Ollama is already installed
+  if command -v ollama &> /dev/null; then
+    ok "Ollama already installed ($(ollama --version 2>/dev/null || echo 'unknown version'))"
   else
-    echo "WARNING: Signet daemon is not running. Start it with: signet daemon start"
+    echo "  Installing Ollama..."
+    curl -fsSL https://ollama.ai/install.sh | sh 2>&1 | tail -3
+    if command -v ollama &> /dev/null; then
+      ok "Ollama installed"
+    else
+      fail "Ollama installation failed"
+      echo "  Try manually: curl -fsSL https://ollama.ai/install.sh | sh"
+      return 1
+    fi
   fi
-else
+
+  # Ensure Ollama is running
+  if curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; then
+    ok "Ollama is running"
+  else
+    echo "  Starting Ollama..."
+    systemctl --user start ollama 2>/dev/null || nohup ollama serve > /dev/null 2>&1 &
+    # Wait up to 15 seconds
+    for i in $(seq 1 15); do
+      if curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; then break; fi
+      sleep 1
+    done
+    if curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; then
+      ok "Ollama started"
+    else
+      fail "Ollama failed to start"
+      echo "  Try manually: ollama serve"
+      return 1
+    fi
+  fi
+
+  # Pull nomic-embed-text
+  if ollama list 2>/dev/null | grep -q nomic-embed-text; then
+    ok "nomic-embed-text already installed"
+  else
+    echo "  Pulling nomic-embed-text (274 MB)..."
+    ollama pull nomic-embed-text 2>&1 | tail -1
+    if ollama list 2>/dev/null | grep -q nomic-embed-text; then
+      ok "nomic-embed-text installed"
+    else
+      fail "Failed to pull nomic-embed-text"
+      echo "  Try manually: ollama pull nomic-embed-text"
+      return 1
+    fi
+  fi
+}
+
+# ─── Step 2: Node.js check ───────────────────────────────────────────────────
+
+check_node() {
+  if [ "$SKILL_ONLY" = "1" ] || [ "$SKIP_SIGNET" = "1" ]; then return 0; fi
+
+  step "2/4" "Node.js"
+
+  if command -v node &> /dev/null; then
+    NODE_VER=$(node --version)
+    NODE_MAJOR=$(echo "$NODE_VER" | sed 's/v//' | cut -d. -f1)
+    if [ "$NODE_MAJOR" -ge 20 ]; then
+      ok "Node.js $NODE_VER"
+      return 0
+    else
+      fail "Node.js $NODE_VER too old (need v20+)"
+    fi
+  else
+    fail "Node.js not found"
+  fi
+
+  echo "  Install Node.js 22:"
+  echo "    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash"
+  echo "    source ~/.bashrc && nvm install 22"
+  return 1
+}
+
+# ─── Step 3: Signet ──────────────────────────────────────────────────────────
+
+install_signet() {
+  if [ "$SKILL_ONLY" = "1" ] || [ "$SKIP_SIGNET" = "1" ]; then return 0; fi
+
+  step "3/4" "Signet"
+
+  # Signet daemon requires Bun
+  if command -v bun &> /dev/null; then
+    ok "Bun already installed ($(bun --version 2>/dev/null))"
+  else
+    echo "  Installing Bun (Signet daemon runtime)..."
+    curl -fsSL https://bun.sh/install | bash > /dev/null 2>&1
+    export BUN_INSTALL="$HOME/.bun"
+    export PATH="$BUN_INSTALL/bin:$PATH"
+    if command -v bun &> /dev/null; then
+      ok "Bun installed ($(bun --version 2>/dev/null))"
+    else
+      warn "Bun installation failed — daemon won't start"
+      echo "  Try manually: curl -fsSL https://bun.sh/install | bash"
+    fi
+  fi
+
+  if command -v signet &> /dev/null; then
+    ok "Signet already installed ($(signet --version 2>/dev/null || echo 'unknown'))"
+  else
+    echo "  Installing signetai..."
+    npm install -g signetai 2>&1 | tail -3
+    if command -v signet &> /dev/null; then
+      ok "Signet installed ($(signet --version 2>/dev/null))"
+    else
+      fail "Signet installation failed"
+      echo "  Try manually: npm install -g signetai"
+      return 1
+    fi
+  fi
+
+  # Check if already set up (agent.yaml exists)
+  if [ -f "$HOME/.agents/agent.yaml" ]; then
+    ok "Signet already configured (~/.agents/agent.yaml exists)"
+  else
+    echo "  Running signet setup (non-interactive)..."
+    signet setup --non-interactive \
+      --name "Smart-Agent" \
+      --description "Personal AI assistant" \
+      --harness "$HARNESS" \
+      --deployment-type local \
+      --embedding-provider ollama \
+      --embedding-model nomic-embed-text \
+      --extraction-provider "$HARNESS" \
+      --skip-git \
+      2>&1 | tail -5
+    if [ -f "$HOME/.agents/agent.yaml" ]; then
+      ok "Signet configured"
+    else
+      warn "Setup may still be running — check with: signet status"
+    fi
+  fi
+
+  # Ensure daemon is running
+  if signet status 2>&1 | grep -q "Daemon running"; then
+    ok "Signet daemon running"
+  else
+    echo "  Starting Signet daemon..."
+    signet daemon start 2>&1 | tail -3
+    sleep 3
+    if signet status 2>&1 | grep -q "Daemon running"; then
+      ok "Signet daemon started"
+    else
+      warn "Daemon may need manual start: signet daemon start"
+    fi
+  fi
+
+  echo "  Syncing harness plugins..."
+  signet sync > /dev/null 2>&1
+  ok "Harness plugins synced"
+
+  # Register Signet MCP in harness config (OpenCode only — other harnesses vary)
+  if [ "$HARNESS" = "opencode" ]; then
+    local CONFIG="$HOME/.config/opencode/opencode.json"
+    if [ -f "$CONFIG" ] && grep -q '"signet"' "$CONFIG"; then
+      ok "Signet MCP already in opencode.json"
+    else
+      warn "Add signet MCP to opencode.json manually:"
+      echo '    "mcp": { "signet": { "command": ["signet-mcp"], "enabled": true } }'
+    fi
+  fi
+}
+
+# ─── Step 4: signet-first skill ──────────────────────────────────────────────
+
+install_skill() {
+  step "4/4" "signet-first skill"
+
+  local DIR
+  DIR=$(skills_dir)
+  mkdir -p "$DIR"
+
+  echo "  Downloading SKILL.md..."
+  curl -sL "$REPO/SKILL.md" -o "$DIR/SKILL.md"
+
+  if [ -f "$DIR/SKILL.md" ]; then
+    ok "signet-first installed at $DIR/SKILL.md"
+  else
+    fail "Download failed"
+    echo "  Try manually: curl -sL $REPO/SKILL.md -o $DIR/SKILL.md"
+    return 1
+  fi
+}
+
+# ─── Summary ─────────────────────────────────────────────────────────────────
+
+summary() {
   echo ""
-  echo "WARNING: Signet CLI not found. Install Signet first:"
-  echo "  https://github.com/signetai/signet"
-fi
+  echo -e "${BOLD}━━━ Done ━━━${NC}"
+  echo ""
+
+  local ALL_OK=true
+
+  # Ollama
+  if command -v ollama &> /dev/null && ollama list 2>/dev/null | grep -q nomic-embed-text; then
+    ok "Ollama + nomic-embed-text"
+  else
+    warn "Ollama or nomic-embed-text missing — see SETUP.md"
+    ALL_OK=false
+  fi
+
+  # Signet
+  if command -v signet &> /dev/null; then
+    if signet status 2>&1 | grep -q "Daemon running"; then
+      ok "Signet daemon running"
+    else
+      warn "Signet installed but daemon not running — run: signet daemon start"
+      ALL_OK=false
+    fi
+  else
+    warn "Signet not installed — run: npm install -g signetai && signet setup"
+    ALL_OK=false
+  fi
+
+  # Skill
+  local DIR
+  DIR=$(skills_dir)
+  if [ -f "$DIR/SKILL.md" ]; then
+    ok "signet-first skill installed ($HARNESS)"
+  else
+    fail "Skill not found at $DIR/SKILL.md"
+    ALL_OK=false
+  fi
+
+  echo ""
+  if [ "$ALL_OK" = true ]; then
+    echo -e "  ${GREEN}${BOLD}Restart your agent session to activate the skill.${NC}"
+  else
+    echo -e "  ${YELLOW}Some components need attention — see warnings above.${NC}"
+    echo -e "  Full setup guide: $REPO/SETUP.md"
+  fi
+  echo ""
+}
+
+# ─── Main ────────────────────────────────────────────────────────────────────
+
+echo ""
+echo -e "${BOLD}signet-first installer${NC}"
+echo "  https://github.com/ostico/signet-first"
+echo ""
+
+detect_harness
+echo -e "  Harness: ${BOLD}$HARNESS${NC}"
+
+install_ollama || true
+check_node && install_signet || true
+install_skill || true
+summary
