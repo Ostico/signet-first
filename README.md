@@ -140,6 +140,21 @@ user preferences, codebase patterns, tool evaluations.
 (specs, design docs), the Signet daemon's automatic extraction pipeline. This skill
 supplements those systems, it doesn't replace them.
 
+## Updating
+
+```bash
+# If installed via git clone
+cd ~/.config/opencode/skills/signet-first && git pull
+
+# If installed via curl (re-download SKILL.md)
+curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/install.sh | SKILL_ONLY=1 bash
+
+# If installed via skills CLI
+npx -y skills add ostico/signet-first --global --yes --copy
+```
+
+Check [CHANGELOG.md](CHANGELOG.md) for what changed between versions.
+
 ## Test Results
 
 See [TEST-RESULTS.md](TEST-RESULTS.md) — 8/8 tests passed across session restart boundary.
