@@ -25,14 +25,68 @@ After completing ANY of the following, IMMEDIATELY call `signet_memory_store`:
 ```
 signet_memory_store(
   content: "<synthesized conclusion — NOT raw data>",
-  type: "<fact|decision|preference|discovery|analysis>",
-  tags: "comma,separated,relevant,tags",
-  importance: <0.0-1.0>
+  type: "<see type guide below>",
+  tags: ["comma", "separated", "relevant", "tags"],
+  importance: <0.0-1.0>,
+  scope: "<project-name or null for global>",
+  category: "<optional grouping>"
 )
 ```
 
-**Importance guide:**
-- 1.0 — User-stated hard constraint, critical decision
+### Type Guide (USE THE RIGHT TYPE — all 10 are available)
+
+| Type | When to Use | Example |
+|------|-------------|---------|
+| `procedural` | **Commands, workflows, build/test/deploy procedures** | `vendor/bin/phpunit --exclude-group=ExternalServices --no-coverage` |
+| `fact` | Objective truth about code, architecture, config | "Signet DB uses SQLite with FTS5 + sqlite-vec in WAL mode" |
+| `decision` | A choice that was made (by user or agent) | "Chose read-through caching over write-through for DaoCacheTrait" |
+| `preference` | User preference, style choice, workflow habit | "User prefers conventional-commit with emoji prefix" |
+| `rationale` | The WHY behind a decision | "Picked WAL mode because daemon needs concurrent reads during writes" |
+| `discovery` | New finding about codebase, tool, or library | "nomic-embed-text is 137M params, limited on code-specific queries" |
+| `episodic` | Session-specific event worth remembering | "Docker validation of install.sh passed all checks on Ubuntu 24.04" |
+| `semantic` | General knowledge synthesized from multiple sources | "OSS agent memory systems lack frequency-based auto-promotion" |
+| `daily-log` | End-of-session summary of what was accomplished | "Completed cross-platform setup recipe, 5 commits on signet-first" |
+| `system` | Internal agent configuration or meta-knowledge | "This project uses PHPUnit 12.4 with ExternalServices group excluded" |
+
+**DEFAULT to `fact` only when no other type fits.** The most common mistake is storing everything as `fact` when `procedural`, `decision`, or `preference` would enable more precise retrieval.
+
+### Pinning (for non-decaying critical knowledge)
+
+Memories decay at `0.95^days` by default. Some knowledge must NEVER decay:
+
+- **User-stated hard constraints** (commit rules, test commands, coding standards)
+- **Critical project procedures** (deploy steps, release process)
+- **Identity-level preferences** (communication style, tool choices)
+
+For these, add `pinned: true` to the store call. Pinned memories are exempt from decay and rank higher in retrieval.
+
+```
+# Pin critical constraints — they must never decay
+signet_memory_store(
+  content: "Matecat test command: vendor/bin/phpunit --exclude-group=ExternalServices --no-coverage",
+  type: "procedural",
+  tags: ["matecat", "phpunit", "test-command"],
+  importance: 1.0,
+  scope: "matecat",
+  pinned: true
+)
+```
+
+**Do NOT pin everything.** Only pin knowledge that is both critical AND stable (unlikely to change). Discoveries, analysis results, and session events should NOT be pinned — let them decay naturally.
+
+### Scope (for project isolation)
+
+Use `scope` to prevent cross-project contamination in search results:
+
+- `scope: "matecat"` — Matecat PHP project knowledge
+- `scope: "signet-first"` — signet-first skill/repo knowledge
+- `scope: null` (or omit) — global knowledge applicable everywhere
+
+When searching, prefer scoped queries when you know which project you're working in.
+
+### Importance Guide
+
+- 1.0 — User-stated hard constraint, critical procedure, pinned knowledge
 - 0.7-0.9 — Architecture decision, significant finding
 - 0.4-0.6 — Useful pattern, minor preference
 - 0.1-0.3 — Trivia, ephemeral context
@@ -53,6 +107,10 @@ BEFORE acting on any recalled knowledge — commands, constraints, conventions, 
 
 ```
 1. signet_memory_search(query: "<what you need>", limit: 10)
+   — Add type filter when you know what kind of memory you need:
+     type: "procedural" for commands, "decision" for past choices,
+     "preference" for user habits, "fact" for architecture knowledge.
+   — Include project name in query terms for implicit scope filtering.
 2. JUDGE: Do any results actually answer the query?
    - Signet's traversal engine returns high scores for broad entity matches
      (e.g. any memory mentioning "Matecat" scores high for any Matecat query).
@@ -99,11 +157,31 @@ Before executing ANY of the following, you MUST search Signet for the correct pr
 
 ```
 BEFORE running a command:
-1. SEARCH Signet for the command/procedure
+1. SEARCH Signet with type and scope hints:
+   signet_memory_search(query: "<command/procedure>", type: "procedural", limit: 5)
+   — If you know the project, add scope filtering in your query terms.
 2. IF found → use the Signet version exactly
 3. IF not found → check project files (Makefile, package.json, README, CI config)
 4. IF still not found → ask the user
 NEVER skip to execution because you "remember" the command.
+```
+
+### Pre-Action Search Examples
+
+```
+# Running tests → search for the procedural memory
+recall("phpunit test command matecat")
+# Found: "vendor/bin/phpunit --exclude-group=ExternalServices --no-coverage"
+# → Use EXACTLY that. Do not add/remove flags from memory.
+
+# Committing → search for commit conventions
+recall("commit conventions matecat")
+# Found: "conventional-commit with emoji, -a flag, show message, wait authorization"
+# → Follow the procedure step by step.
+
+# Deploying → search for deploy procedure
+recall("deploy production steps")
+# Not found → check Makefile, CI config, README → still not found → ASK USER.
 ```
 
 ## Red Flags — You Are Violating This Skill
@@ -116,6 +194,10 @@ NEVER skip to execution because you "remember" the command.
 - Searching markdown files "just to be thorough" after Signet already answered
 - Executing a command from memory without searching Signet first
 - Thinking "I already know this" or "I remember the command" — that IS the trigger to search
+- Storing everything as `type: "fact"` when `procedural`, `decision`, or `preference` fits better
+- Storing a user-stated hard constraint without `pinned: true`
+- Storing project-specific knowledge without `scope` — it will pollute other project searches
+- Searching without type hints when you know the memory category (e.g. searching for a command without `type: "procedural"`)
 
 ## Scope
 
