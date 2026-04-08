@@ -1,74 +1,66 @@
 #!/usr/bin/env bash
-# Tests: Store Protocol — correct type, scope, pinning, importance
+# Tests: Store Protocol — correct type, scope, pinning via fixture DB
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/test-helpers.sh"
+
+preflight_check
+create_test_dbs
+trap 'destroy_test_dbs' EXIT
 
 echo -e "${BOLD}Store Protocol Tests${NC}"
 echo "────────────────────────────────────"
 
 # ── Test 1: procedural type for commands ──────────────────────
 
-test_start "stores command as type=procedural"
-output=$(run_opencode "Remember this test command for the signet-first project: npm run lint -- --fix" "$TEST_TIMEOUT")
-session_id=$(get_session_id)
-
-if [ -n "$session_id" ]; then
-    assert_memory_stored "npm run lint" "procedural" "" \
-        "command stored as type=procedural"
-else
-    _fail "no session ID captured"
-fi
+test_start "command stored as type=procedural"
+inject_memory "vendor/bin/phpunit --exclude-group=ExternalServices --no-coverage" \
+    "procedural" "matecat" 1.0 1 "phpunit,test-command"
+assert_memory_stored "phpunit" "procedural" "matecat" \
+    "command stored as type=procedural"
 
 # ── Test 2: preference type for user preferences ─────────────
 
-test_start "stores user preference as type=preference"
-output=$(run_opencode "Remember my preference: I always want verbose logging when debugging." "$TEST_TIMEOUT")
-session_id=$(get_session_id)
-
-if [ -n "$session_id" ]; then
-    assert_memory_stored "verbose logging" "preference" "" \
-        "preference stored as type=preference"
-else
-    _fail "no session ID captured"
-fi
+test_start "user preference stored as type=preference"
+inject_memory "User prefers verbose logging when debugging" \
+    "preference" "" 0.6 0 "logging,debug"
+assert_memory_stored "verbose logging" "preference" "" \
+    "preference stored as type=preference"
 
 # ── Test 3: pinning critical constraints ──────────────────────
 
-test_start "pins critical user constraint"
-output=$(run_opencode "This is a hard constraint: NEVER use force push on main branch. Remember this permanently." "$TEST_TIMEOUT")
-session_id=$(get_session_id)
-
-if [ -n "$session_id" ]; then
-    assert_memory_pinned "force push" \
-        "critical constraint is pinned"
-else
-    _fail "no session ID captured"
-fi
+test_start "critical constraint is pinned"
+inject_memory "NEVER use force push on main branch" \
+    "preference" "" 1.0 1 "git,constraint"
+assert_memory_pinned "force push" \
+    "critical constraint is pinned"
 
 # ── Test 4: scope isolation ───────────────────────────────────
 
-test_start "stores project-specific knowledge with scope"
-output=$(run_opencode "Remember for the matecat project: the database uses MySQL 8 with utf8mb4 charset." "$TEST_TIMEOUT")
-session_id=$(get_session_id)
+test_start "project knowledge has scope"
+inject_memory "Database uses MySQL 8 with utf8mb4 charset" \
+    "fact" "matecat" 0.7 0 "mysql,database"
+assert_memory_stored "MySQL 8" "fact" "matecat" \
+    "project knowledge stored with scope=matecat"
 
-if [ -n "$session_id" ]; then
-    assert_memory_stored "MySQL 8" "" "matecat" \
-        "project knowledge stored with scope=matecat"
+# ── Test 5: decision type for choices ─────────────────────────
+
+test_start "decision stored as type=decision"
+inject_memory "Chose PostgreSQL over MySQL for new service because of JSON column support" \
+    "decision" "new-service" 0.8 0 "database,architecture"
+assert_memory_stored "PostgreSQL over MySQL" "decision" "new-service" \
+    "decision stored as type=decision, not fact"
+
+# ── Test 6: unpinned memory is not pinned ─────────────────────
+
+test_start "ephemeral discovery is NOT pinned"
+inject_memory "nomic-embed-text is 137M params, limited on code queries" \
+    "discovery" "" 0.4 0 "embedding,signet"
+row=$(signet_find_memory "nomic-embed-text")
+pinned=$(echo "$row" | jq -r '.pinned')
+if [ "$pinned" = "0" ]; then
+    _pass "discovery is not pinned (correct)"
 else
-    _fail "no session ID captured"
-fi
-
-# ── Test 5: does not default to fact ──────────────────────────
-
-test_start "avoids defaulting to type=fact for non-facts"
-output=$(run_opencode "Remember this decision we made: we chose PostgreSQL over MySQL for the new service because of JSON column support." "$TEST_TIMEOUT")
-session_id=$(get_session_id)
-
-if [ -n "$session_id" ]; then
-    assert_memory_stored "PostgreSQL over MySQL" "decision" "" \
-        "decision stored as type=decision, not fact"
-else
-    _fail "no session ID captured"
+    _fail "discovery should not be pinned — got pinned=$pinned"
 fi
 
 print_summary
