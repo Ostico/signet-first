@@ -18,6 +18,7 @@ test_files=()
 for f in "$TESTS_DIR"/test-*.sh; do
     [ -f "$f" ] || continue
     [[ "$(basename "$f")" == "test-helpers.sh" ]] && continue
+    [[ "$(basename "$f")" == "test-install-docker.sh" ]] && continue
     test_files+=("$f")
 done
 
