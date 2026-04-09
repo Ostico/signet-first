@@ -40,16 +40,32 @@ markdown file the daemon auto-generates and injects into the system prompt every
 
 This breaks at scale:
 
-- **5000 token hard cap.** With 20 projects, each gets ~250 tokens — roughly 2-3 memories
-  per project. The daemon uses a rolling window: recent entries push older ones out, even if
-  the older ones matter more for the current project.
-- **No project scoping.** Working on project A? MEMORY.md still contains memories about
-  projects B through T. The agent starts every session reading cross-project noise.
-- **Token waste on redundant exploration.** Without a search-first protocol, agents fire
-  background explore/librarian agents for information already in the database. These agents
-  take minutes and consume full context windows. A Signet query takes <2 seconds.
-- **Cold start every session.** Without a handoff mechanism, the agent doesn't know what was
-  accomplished yesterday, what decisions were made, or what's still unfinished.
+- **MEMORY.md has a 5000 token hard cap** (configurable in `agent.yaml`, verified in
+  `memory-head.ts`). With 20 projects, each gets ~250 tokens — roughly 2-3 memories per
+  project. The daemon uses a rolling window: recent entries push older ones out, regardless
+  of importance. There is no priority-based truncation — a trivial session note takes the
+  same space as a critical architectural decision.
+
+- **No project scoping.** MEMORY.md is global. Working on project A? It still contains
+  memories about projects B through T. The Signet database supports a `scope` field per
+  memory and queries can filter by it — but MEMORY.md doesn't use this. The agent starts
+  every session reading cross-project noise.
+
+- **Token waste on redundant exploration.** Without a search-first protocol, agents default
+  to firing background explore/librarian agents for information already in the database.
+  Each subagent receives the full prompt + tools + its own context window. In a real-world
+  test, an agent fired 3 background agents (~3 minutes, full context each) to research a
+  topic where Signet already held ~80% of the answer. A `signet_memory_search` call takes
+  less than 2 seconds.
+
+- **Cold start every session.** The agent doesn't know what was accomplished yesterday,
+  what decisions were made, or what's still unfinished. Without a handoff mechanism, the
+  first 5-10 minutes of every session are wasted re-discovering the project state.
+
+- **Fixed token cost per session.** MEMORY.md + AGENTS.md + IDENTITY.md + SOUL.md +
+  USER.md are injected every session start regardless of relevance (~550 tokens empty,
+  ~6000-7000 tokens when filled across 20 projects). This is a fixed cost on every turn
+  — the agent pays it whether the content is relevant or not.
 
 ### What this skill changes
 
@@ -57,8 +73,14 @@ signet-first teaches the agent to query the database directly instead of reading
 MEMORY.md dump — scoped to the current project, filtered by type, ranked by relevance.
 Typical result: 500-2000 tokens of exactly what's needed, zero cross-project noise.
 
-It also adds a session handoff protocol: each session ends with a structured `daily-log`
-memory, and the next session reads it before doing anything else.
+It adds three protocols:
+
+- **Search-before-act** — the agent must search Signet before firing any explore/librarian
+  agent, reading any file, or executing any command. This eliminates redundant exploration.
+- **Session handoff** — each session ends with a structured `daily-log` memory. The next
+  session reads it before doing anything else, eliminating cold starts.
+- **Pre-action gate** — before running any build/test/deploy command, the agent searches
+  Signet for the verified procedure instead of relying on its own recall.
 
 ## Installation
 
