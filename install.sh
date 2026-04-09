@@ -295,7 +295,7 @@ summary() {
     echo -e "  ${GREEN}${BOLD}Restart your agent session to activate the skill.${NC}"
   else
     echo -e "  ${YELLOW}Some components need attention — see warnings above.${NC}"
-    echo -e "  Full setup guide: $REPO/SETUP.md"
+    echo -e "  Full setup guide: $REPO/SIGNET_SETUP.md"
   fi
   echo ""
 }
