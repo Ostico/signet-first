@@ -201,4 +201,4 @@ bash tests/run-all.sh
 
 ## License
 
-MIT
+[MIT](LICENSE.md)
