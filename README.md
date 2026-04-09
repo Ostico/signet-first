@@ -62,8 +62,17 @@ memory, and the next session reads it before doing anything else.
 
 ## Installation
 
-**Note:** Installation differs by platform. Claude Code and Cursor have built-in plugin
-marketplaces. Codex and OpenCode can be told to self-install.
+Installation differs by platform. The fastest path: **tell your agent to install it.**
+
+### Any platform (tell your agent)
+
+Paste this into your agent chat:
+
+```
+Install signet-first: fetch https://raw.githubusercontent.com/Ostico/signet-first/refs/heads/master/.opencode/INSTALL.md and follow the instructions. If this is not OpenCode, fetch https://raw.githubusercontent.com/Ostico/signet-first/refs/heads/master/.codex/INSTALL.md instead.
+```
+
+The agent will clone the repo, copy files, and register the plugin. You just restart.
 
 ### Claude Code
 
