@@ -180,21 +180,68 @@ install_signet() {
 # ─── Step 3: signet-first skill ──────────────────────────────────────────────
 
 install_skill() {
-  step "3/3" "signet-first skill"
+  step "3/3" "signet-first skill + plugin"
 
   local DIR
   DIR=$(skills_dir)
-  mkdir -p "$DIR"
 
-  echo "  Downloading SKILL.md..."
-  curl -sL "$REPO/SKILL.md" -o "$DIR/SKILL.md"
+  if [ -d "$DIR/.git" ]; then
+    ok "signet-first already cloned at $DIR"
+    echo "  Updating..."
+    git -C "$DIR" pull --ff-only 2>&1 | tail -3
+  elif command -v git &> /dev/null; then
+    echo "  Cloning repository (includes hooks + plugin files)..."
+    git clone https://github.com/Ostico/signet-first.git "$DIR" 2>&1 | tail -3
+  else
+    echo "  git not available — falling back to SKILL.md download"
+    mkdir -p "$DIR"
+    curl -sL "$REPO/SKILL.md" -o "$DIR/SKILL.md"
+  fi
 
   if [ -f "$DIR/SKILL.md" ]; then
-    ok "signet-first installed at $DIR/SKILL.md"
+    ok "signet-first installed at $DIR"
   else
-    fail "Download failed"
-    echo "  Try manually: curl -sL $REPO/SKILL.md -o $DIR/SKILL.md"
+    fail "Installation failed"
+    echo "  Try manually: git clone https://github.com/Ostico/signet-first.git $DIR"
     return 1
+  fi
+
+  if [ "$HARNESS" = "opencode" ]; then
+    register_opencode_plugin
+  fi
+
+  if [ "$HARNESS" = "codex" ]; then
+    mkdir -p "$HOME/.agents/skills"
+    ln -sf "$DIR" "$HOME/.agents/skills/signet-first"
+    ok "Codex symlink created"
+  fi
+}
+
+register_opencode_plugin() {
+  local CONFIG="$HOME/.config/opencode/opencode.json"
+  local PLUGIN_ENTRY="signet-first@git+https://github.com/Ostico/signet-first.git"
+
+  if [ ! -f "$CONFIG" ]; then
+    warn "opencode.json not found — create it manually or restart OpenCode"
+    return
+  fi
+
+  if grep -q "signet-first" "$CONFIG" 2>/dev/null; then
+    ok "signet-first plugin already in opencode.json"
+    return
+  fi
+
+  if command -v jq &> /dev/null; then
+    local TMP="${CONFIG}.tmp"
+    if jq -e '.plugin' "$CONFIG" > /dev/null 2>&1; then
+      jq ".plugin += [\"$PLUGIN_ENTRY\"]" "$CONFIG" > "$TMP" && mv "$TMP" "$CONFIG"
+    else
+      jq ". + {\"plugin\": [\"$PLUGIN_ENTRY\"]}" "$CONFIG" > "$TMP" && mv "$TMP" "$CONFIG"
+    fi
+    ok "signet-first plugin added to opencode.json"
+  else
+    warn "jq not available — add this to opencode.json plugin array manually:"
+    echo "    \"$PLUGIN_ENTRY\""
   fi
 }
 
@@ -223,9 +270,24 @@ summary() {
   DIR=$(skills_dir)
   if [ -f "$DIR/SKILL.md" ]; then
     ok "signet-first skill installed ($HARNESS)"
+    if [ -d "$DIR/.git" ]; then
+      ok "full repo cloned (hooks + plugin files included)"
+    else
+      warn "SKILL.md only — plugin auto-injection not available"
+      echo "    For full plugin: git clone https://github.com/Ostico/signet-first.git $DIR"
+    fi
   else
     fail "Skill not found at $DIR/SKILL.md"
     ALL_OK=false
+  fi
+
+  if [ "$HARNESS" = "opencode" ]; then
+    local CONFIG="$HOME/.config/opencode/opencode.json"
+    if [ -f "$CONFIG" ] && grep -q "signet-first" "$CONFIG"; then
+      ok "signet-first plugin registered in opencode.json"
+    else
+      warn "Plugin not registered — auto-injection won't work until added to opencode.json"
+    fi
   fi
 
   echo ""

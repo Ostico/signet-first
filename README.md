@@ -100,16 +100,14 @@ To pin a specific version:
 }
 ```
 
-### Claude Code (via Plugin Marketplace)
-
-Register the marketplace and install:
+### Claude Code Official Marketplace
 
 ```bash
 /plugin marketplace add Ostico/signet-first
 /plugin install signet-first@signet-first-dev
 ```
 
-### Cursor
+### Cursor (via Plugin Marketplace)
 
 In Cursor Agent chat:
 
@@ -127,12 +125,13 @@ Tell Codex:
 Fetch and follow instructions from https://raw.githubusercontent.com/Ostico/signet-first/refs/heads/master/.codex/INSTALL.md
 ```
 
+**Detailed docs:** [docs/README.codex.md](docs/README.codex.md)
+
 ### GitHub Copilot CLI
 
-The SessionStart hook auto-detects Copilot CLI. Clone and add to your plugin config:
-
 ```bash
-git clone https://github.com/Ostico/signet-first.git ~/.config/copilot/signet-first
+copilot plugin marketplace add Ostico/signet-first
+copilot plugin install signet-first@signet-first-dev
 ```
 
 ### Gemini CLI
@@ -147,52 +146,16 @@ gemini extensions install https://github.com/Ostico/signet-first
 curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/install.sh | bash
 ```
 
-The installer auto-detects your harness (OpenCode, Claude Code, Codex) and installs
-Signet + the skill. Skips anything already installed.
+The installer auto-detects your harness, installs Signet + the skill + registers the plugin.
+Skips anything already installed.
 
 **Options:**
 
 ```bash
-# Force a specific harness
-curl -sL .../install.sh | HARNESS=claude-code bash
-
-# Skip Signet (you already have it)
-curl -sL .../install.sh | SKIP_SIGNET=1 bash
-
-# Just the skill, nothing else
-curl -sL .../install.sh | SKILL_ONLY=1 bash
+curl -sL .../install.sh | HARNESS=claude-code bash   # Force harness
+curl -sL .../install.sh | SKIP_SIGNET=1 bash          # Skip Signet
+curl -sL .../install.sh | SKILL_ONLY=1 bash            # Just the skill
 ```
-
-### Skills CLI
-
-```bash
-npx -y skills add ostico/signet-first --global --yes --copy
-```
-
-### Manual copy
-
-```bash
-# OpenCode
-mkdir -p ~/.config/opencode/skills/signet-first
-curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/SKILL.md \
-  -o ~/.config/opencode/skills/signet-first/SKILL.md
-
-# Claude Code
-mkdir -p ~/.claude/skills/signet-first
-curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/SKILL.md \
-  -o ~/.claude/skills/signet-first/SKILL.md
-
-# Codex
-mkdir -p ~/.agents/skills/signet-first
-curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/SKILL.md \
-  -o ~/.agents/skills/signet-first/SKILL.md
-```
-
-### Agent self-install
-
-Ask your agent:
-
-> Install the signet-first skill from `https://github.com/ostico/signet-first`
 
 ## Verification
 
