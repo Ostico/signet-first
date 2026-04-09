@@ -2,7 +2,7 @@
   "name": "signet-first",
   "displayName": "Signet First",
   "description": "Signet memory-first protocol — forces agents to search Signet before taking any action",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": {
     "name": "Domenico Lupinetti",
     "email": "ostico@gmail.com"
