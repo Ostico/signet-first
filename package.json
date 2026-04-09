@@ -1,0 +1,6 @@
+{
+  "name": "signet-first",
+  "version": "1.0.0",
+  "type": "module",
+  "main": ".opencode/plugins/signet-first-bootstrap.js"
+}
