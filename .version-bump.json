@@ -15,7 +15,8 @@
       ".version-bump.json",
       "scripts/bump-version.sh",
       "README.md",
-      "INSTALL.md"
+      "INSTALL.md",
+      "docs"
     ]
   }
 }
