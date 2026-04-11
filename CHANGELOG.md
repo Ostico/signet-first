@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.0.0
+
+### Breaking Changes
+
+- **SKILL.md rewritten** — single-layer structure of 8 concrete rules with explicit skip clauses replaces the previous 5 mandatory sections + 17 red flags.
+- **Fallback warning changed** — `SIGNET-FIRST FALLBACK: ...` (alarming) → `Memory returned no results for "...". Checking project files.` (informational). Agents or tests checking for the old string need updating.
+- **Progressive enhancement** — all rules degrade gracefully for non-Signet users. SKILL.md and templates/CLAUDE.md detect Signet availability and fall back to native memory systems.
+
+### Features
+
+- **Proportional enforcement** — each rule has explicit "Skip for:" clauses. Trivial edits, direct user instructions, and short sessions skip the overhead.
+- **Rule 7 decision/rationale exception** — memory conflicts on `decision` or `rationale` types are flagged to the user instead of silently overwritten.
+- **Rule 2 narrow clause** — continuation requests trigger targeted daily-log searches instead of full memory searches.
+- **templates/CLAUDE.md auto-deployment** — SessionStart hook creates or updates project-level CLAUDE.md, preserving user content below the managed section.
+- **Judgment Guide** — 3 principles for ambiguous cases (shared resource, precision over completeness, natural decay).
+- Version consistency test ensures templates/CLAUDE.md version matches package.json.
+
 ## Unreleased
 
 - Added "Updating" section to README

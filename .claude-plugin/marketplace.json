@@ -1,6 +1,6 @@
 {
   "name": "signet-first-dev",
-  "description": "Development marketplace for signet-first memory protocol skill",
+  "description": "Memory-first protocol for AI coding agents — search memory before acting, store durable conclusions, maintain session continuity",
   "owner": {
     "name": "Domenico Lupinetti",
     "email": "ostico@gmail.com"
@@ -8,8 +8,8 @@
   "plugins": [
     {
       "name": "signet-first",
-      "description": "Signet memory-first protocol — forces agents to search Signet before taking any action",
-      "version": "1.1.0",
+      "description": "Memory-first protocol for AI coding agents — search memory before acting, store durable conclusions, maintain session continuity",
+      "version": "2.0.0",
       "source": "./",
       "author": {
         "name": "Domenico Lupinetti",
