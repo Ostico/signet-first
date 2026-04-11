@@ -17,7 +17,7 @@ If `signet_memory_search` is available, use Signet as the memory backend. Otherw
 
 ## Rules
 
-Each rule below is mandatory unless a skip clause applies. Skip clauses are exhaustive — if your situation is not listed, the rule applies.
+Each rule below applies unless a skip clause says otherwise. Skip clauses are exhaustive — if your situation is not listed, the rule applies.
 
 ### Rule 1: Search memory before running commands
 
