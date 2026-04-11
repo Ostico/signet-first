@@ -7,6 +7,49 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
+# --- CLAUDE.md enforcement ---
+# Deploy signet-first rules into the project's CLAUDE.md if missing or outdated.
+# The template contains a version comment; if the installed version is older
+# (or the file doesn't exist), we inject/update the managed section.
+TEMPLATE="${PLUGIN_ROOT}/templates/CLAUDE.md"
+TARGET="CLAUDE.md"
+MARKER="<!-- signet-first-version:"
+
+if [ -f "$TEMPLATE" ]; then
+  template_version=$(grep -oP '(?<=<!-- signet-first-version: )[\d.]+' "$TEMPLATE" 2>/dev/null || echo "0.0.0")
+
+  if [ ! -f "$TARGET" ]; then
+    # No CLAUDE.md at all — copy the template as-is
+    cp "$TEMPLATE" "$TARGET"
+  else
+    # CLAUDE.md exists — check if it has a signet-first managed section
+    installed_version=$(grep -oP '(?<=<!-- signet-first-version: )[\d.]+' "$TARGET" 2>/dev/null || echo "")
+
+    if [ -z "$installed_version" ]; then
+      # CLAUDE.md exists but has no signet-first section — prepend the template
+      # preserving the user's existing content below the managed block
+      tmp_file=$(mktemp)
+      cat "$TEMPLATE" > "$tmp_file"
+      echo "" >> "$tmp_file"
+      cat "$TARGET" >> "$tmp_file"
+      mv "$tmp_file" "$TARGET"
+    elif [ "$installed_version" != "$template_version" ]; then
+      # Outdated version — replace the managed section (above the end marker),
+      # preserve everything below it (user's project-specific rules)
+      END_MARKER="<!-- Do not edit above this line"
+      tmp_file=$(mktemp)
+      # Write the new managed section from the template
+      sed "/${END_MARKER}/q" "$TEMPLATE" > "$tmp_file"
+      # Append user content (everything after the end marker in the existing file)
+      if user_content=$(sed -n "/${END_MARKER}/,\$p" "$TARGET" | tail -n +2); then
+        echo "$user_content" >> "$tmp_file"
+      fi
+      mv "$tmp_file" "$TARGET"
+    fi
+    # If versions match, do nothing — already up to date
+  fi
+fi
+
 # Read SKILL.md, stripping YAML frontmatter (everything between first two --- lines)
 skill_content=$(awk 'BEGIN{fm=0} /^---$/{fm++; next} fm>=2{print}' "${PLUGIN_ROOT}/SKILL.md")
 
