@@ -1,5 +1,5 @@
 {
-  "name": "signet-first-dev",
+  "name": "signet-first",
   "description": "Memory-first protocol for AI coding agents — search memory before acting, store durable conclusions, maintain session continuity",
   "owner": {
     "name": "Domenico Lupinetti",
