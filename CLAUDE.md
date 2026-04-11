@@ -18,9 +18,12 @@ Otherwise, use your native memory capabilities (MEMORY.md, auto memory, etc.).
 
 3. **Store conclusions after investigations.** After multi-step investigations, decisions,
    or debugging, store a synthesized conclusion. Search for duplicates first — update, don't duplicate.
-   When the conclusion is a user-stated hard constraint or critical procedure, pin it (`pinned: true`).
+   When the conclusion is a user-stated hard constraint or critical procedure, mark it with
+   `importance: 1.0` and tag `critical` (see Pinning note below).
    Skip for: trivial Q&A under 3 exchanges; single lookups with no novel finding.
    Preferred: `signet_memory_store(content, type, tags, importance)`. Fallback: native memory.
+   **Pinning note:** Signet's MCP tools do not yet expose the `pinned` parameter.
+   Use `importance: 1.0` + tag `critical` as the workaround until a Signet release adds it.
 
 4. **Write a session summary before ending non-trivial sessions.**
    Skip for: sessions where no investigation, decision, or multi-file exploration occurred.
