@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.1
+
+### Clarifications
+
+- **Rule 6** — Added "memory gaps are normal" framing and explicit anti-over-search guidance (do not retry with minor variations, do not distrust memory after empty results). Addresses behavioral pattern where agents cascade from one empty result into skipping memory entirely.
+- **Rule 7** — Replaced "source of truth" language with artifact-vs-commentary mental model ("Code is the artifact. Memory is commentary on the artifact."). Gives agents a reasoning framework for the decision/rationale exception case.
+
+Both changes are clarifications of existing v2.0 rules, not behavioral changes. No test updates required.
+
 ## 2.0.0
 
 ### Breaking Changes

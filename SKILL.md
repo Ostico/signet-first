@@ -71,7 +71,7 @@ When memory search returns no relevant results and you fall back to project file
 
 `Memory returned no results for "<query>". Checking project files.`
 
-Do not apologize. Do not retry the same query. Do not treat it as an error.
+Memory gaps are normal — new projects, new topics, and early sessions will always have them. Do not apologize. Do not retry the same query with minor variations hoping for different results. Do not treat a missing memory as a system failure or a reason to distrust memory on subsequent searches.
 
 After retrieving from files, store the result so the gap fills over time.
 
@@ -80,7 +80,9 @@ After retrieving from files, store the result so the gap fills over time.
 
 ### Rule 7: When memory conflicts with current code, trust the code
 
-Code is the source of truth. Memory records are interpretations frozen at a point in time. Trust what you see now — then update or remove stale memory.
+Code is the artifact. Memory is commentary on the artifact — what someone understood at the moment they stored it. When they disagree, the artifact wins.
+
+Trust what you see now — then update or remove stale memory.
 
 **Exception for decisions and rationale:** If the conflicting memory records a `decision` or `rationale` type, flag the conflict to the user before updating. The code may have diverged intentionally or accidentally — the decision record should not be silently overwritten.
 

@@ -27,9 +27,11 @@ Otherwise, use your native memory capabilities (MEMORY.md, auto memory, etc.).
 
 5. **When memory returns no results, say so in one sentence and proceed.**
    `Memory returned no results for "<query>". Checking project files.`
+   Memory gaps are normal. Do not retry with minor variations or distrust memory on subsequent searches.
    Then store the result so the gap fills over time.
 
-6. **When memory conflicts with current code, trust the code.** Update or remove stale memory.
+6. **When memory conflicts with current code, trust the code.** Code is the artifact;
+   memory is commentary. When they disagree, the artifact wins. Update or remove stale memory.
    Exception: if the memory records a `decision` or `rationale` type, flag the conflict
    to the user before updating — the code may have diverged intentionally.
 
