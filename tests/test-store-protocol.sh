@@ -116,4 +116,23 @@ else
     _fail "constraint importance=$importance (expected >= 0.7)"
 fi
 
+# ── Test 11: Rule 7 — decision memory conflict flagged ───────
+
+test_start "decision memory conflict flagged to user"
+inject_memory "Chose PostgreSQL over MySQL because of JSON column support" \
+    "decision" "new-service" 0.8 0 "database,architecture"
+
+# Simulate a session where the agent finds conflicting code and flags it
+sid=$(inject_session "ses_decision_conflict")
+mid=$(inject_message "$sid" "assistant" 20000000)
+inject_tool_call "$sid" "$mid" "signet_memory_search" \
+    '{"query":"database choice new-service"}' \
+    "Chose PostgreSQL over MySQL because of JSON column support" 20000100
+inject_text "$sid" "$mid" "Memory says we chose PostgreSQL, but the code uses MySQL. Flagging this conflict — the decision may have changed intentionally." 20000200
+
+session_text=$(get_session_text "$sid")
+# The agent should flag the conflict, not silently overwrite
+assert_contains "$session_text" "conflict" "agent flagged decision conflict"
+assert_not_contains "$session_text" "updating memory" "agent did not silently overwrite decision"
+
 print_summary

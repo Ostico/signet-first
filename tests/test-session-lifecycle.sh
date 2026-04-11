@@ -126,4 +126,29 @@ else
     _fail "daily-log missing both accomplishments and next steps"
 fi
 
+# ── Test 7: Rule 2 — continuation narrows to daily-log ───────
+
+test_start "continuation request triggers daily-log search"
+sid=$(inject_session "ses_continuation")
+mid=$(inject_message "$sid" "assistant" 18000000)
+inject_tool_call "$sid" "$mid" "signet_memory_search" \
+    '{"query":"session summary matecat","type":"daily-log","limit":3}' \
+    "Session summary: added caching layer" 18000100
+inject_tool_call "$sid" "$mid" "bash" '{"command":"git status"}' "clean" 18000200
+
+# Verify the search used type=daily-log (check input JSON)
+input_json=$(sqlite3 "$OPENCODE_DB" "
+    SELECT json_extract(p.data, '$.state.input')
+    FROM part p
+    WHERE p.session_id = '$sid'
+      AND json_extract(p.data, '$.type') = 'tool'
+      AND json_extract(p.data, '$.tool') = 'signet_memory_search'
+    LIMIT 1;
+" 2>/dev/null)
+if echo "$input_json" | grep -q '"type":"daily-log"'; then
+    _pass "search narrowed to type=daily-log"
+else
+    _fail "expected type=daily-log in search input, got: $input_json"
+fi
+
 print_summary
