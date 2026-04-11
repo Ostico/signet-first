@@ -215,6 +215,15 @@ install_skill() {
     ln -sf "$DIR" "$HOME/.agents/skills/signet-first"
     ok "Codex symlink created"
   fi
+
+  if [ "$HARNESS" = "claude-code" ]; then
+    echo ""
+    warn "Claude Code requires manual plugin registration."
+    echo "    Run these two commands in your Claude Code prompt:"
+    echo "      /plugin marketplace add Ostico/signet-first"
+    echo "      /plugin install signet-first@signet-first-dev"
+    echo "    Then restart Claude Code."
+  fi
 }
 
 register_opencode_plugin() {
@@ -288,6 +297,12 @@ summary() {
     else
       warn "Plugin not registered — auto-injection won't work until added to opencode.json"
     fi
+  fi
+
+  if [ "$HARNESS" = "claude-code" ]; then
+    warn "Register the plugin in Claude Code:"
+    echo "    /plugin marketplace add Ostico/signet-first"
+    echo "    /plugin install signet-first@signet-first-dev"
   fi
 
   echo ""

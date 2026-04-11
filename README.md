@@ -90,17 +90,37 @@ Installation differs by platform. The fastest path: **tell your agent to install
 
 Paste this into your agent chat:
 
+**OpenCode:**
 ```
-Install signet-first: fetch https://raw.githubusercontent.com/Ostico/signet-first/refs/heads/master/.opencode/INSTALL.md and follow the instructions. If this is not OpenCode, fetch https://raw.githubusercontent.com/Ostico/signet-first/refs/heads/master/.codex/INSTALL.md instead.
+Install signet-first: fetch https://raw.githubusercontent.com/Ostico/signet-first/refs/heads/master/.opencode/INSTALL.md and follow the instructions.
 ```
 
-The agent will clone the repo, copy files, and register the plugin. You just restart.
+**Claude Code:**
+```
+Install signet-first: fetch https://raw.githubusercontent.com/Ostico/signet-first/refs/heads/master/.claude-plugin/INSTALL.md and follow the instructions.
+```
+
+**Codex:**
+```
+Install signet-first: fetch https://raw.githubusercontent.com/Ostico/signet-first/refs/heads/master/.codex/INSTALL.md and follow the instructions.
+```
+
+The agent will clone the repo, run the installer, and tell you which commands
+to run yourself (if any). You just restart.
 
 ### Claude Code
+
+**Manual (user types these):**
 
 ```bash
 /plugin marketplace add Ostico/signet-first
 /plugin install signet-first@signet-first-dev
+```
+
+**Agent-assisted (paste into chat):**
+
+```
+Install signet-first: fetch https://raw.githubusercontent.com/Ostico/signet-first/refs/heads/master/.claude-plugin/INSTALL.md and follow the instructions.
 ```
 
 ### Cursor
