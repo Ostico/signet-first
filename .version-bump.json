@@ -6,6 +6,9 @@
     { "path": ".claude-plugin/marketplace.json", "field": "plugins.0.version" },
     { "path": "gemini-extension.json", "field": "version" }
   ],
+  "sed_files": [
+    { "path": "templates/CLAUDE.md", "pattern": "<!-- signet-first-version: %s -->" }
+  ],
   "audit": {
     "exclude": [
       "CHANGELOG.md",

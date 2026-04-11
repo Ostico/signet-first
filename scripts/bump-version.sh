@@ -40,10 +40,35 @@ write_json_field() {
   jq "$jq_path = \"$value\"" "$file" > "$tmp" && mv "$tmp" "$file"
 }
 
+# Read a version from a file using a sed pattern.
+# The pattern uses %s as a placeholder for the version.
+read_sed_field() {
+  local file="$1" pattern="$2"
+  local prefix="${pattern%%%s*}"
+  local suffix="${pattern#*%s}"
+  local escaped_prefix escaped_suffix
+  escaped_prefix=$(printf '%s' "$prefix" | sed 's/[.[\*^$()+?{|\\]/\\&/g')
+  escaped_suffix=$(printf '%s' "$suffix" | sed 's/[.[\*^$()+?{|\\]/\\&/g')
+  grep -oP "${escaped_prefix}\\K[0-9]+\\.[0-9]+\\.[0-9]+(?=${escaped_suffix})" "$file" 2>/dev/null | head -1
+}
+
+# Write a version into a file using a sed pattern.
+write_sed_field() {
+  local file="$1" pattern="$2" old_ver="$3" new_ver="$4"
+  local old_string="${pattern//%s/$old_ver}"
+  local new_string="${pattern//%s/$new_ver}"
+  sed -i "s|$old_string|$new_string|g" "$file"
+}
+
 # Read the list of declared files from config.
 # Outputs lines of "path<TAB>field"
 declared_files() {
   jq -r '.files[] | "\(.path)\t\(.field)"' "$CONFIG"
+}
+
+# Outputs lines of "path<TAB>pattern" for sed-based version files.
+declared_sed_files() {
+  jq -r '.sed_files[]? | "\(.path)\t\(.pattern)"' "$CONFIG"
 }
 
 # Read the audit exclude patterns from config.
@@ -72,6 +97,25 @@ cmd_check() {
     printf "  %-45s  %s\n" "$path ($field)" "$ver"
     versions+=("$ver")
   done < <(declared_files)
+
+  # Also check sed-based files
+  while IFS=$'\t' read -r path pattern; do
+    local fullpath="$REPO_ROOT/$path"
+    if [[ ! -f "$fullpath" ]]; then
+      printf "  %-45s  MISSING\n" "$path (sed)"
+      has_drift=1
+      continue
+    fi
+    local ver
+    ver=$(read_sed_field "$fullpath" "$pattern")
+    if [[ -z "$ver" ]]; then
+      printf "  %-45s  NOT FOUND\n" "$path (sed)"
+      has_drift=1
+      continue
+    fi
+    printf "  %-45s  %s\n" "$path (sed)" "$ver"
+    versions+=("$ver")
+  done < <(declared_sed_files)
 
   echo ""
 
@@ -127,6 +171,9 @@ cmd_audit() {
   while IFS=$'\t' read -r path _field; do
     declared_paths+=("$path")
   done < <(declared_files)
+  while IFS=$'\t' read -r path _pattern; do
+    declared_paths+=("$path")
+  done < <(declared_sed_files)
 
   # Grep for the version string
   local found_undeclared=0
@@ -186,6 +233,23 @@ cmd_bump() {
     write_json_field "$fullpath" "$field" "$new_version"
     printf "  %-45s  %s -> %s\n" "$path ($field)" "$old_ver" "$new_version"
   done < <(declared_files)
+
+  # Also bump sed-based files
+  while IFS=$'\t' read -r path pattern; do
+    local fullpath="$REPO_ROOT/$path"
+    if [[ ! -f "$fullpath" ]]; then
+      echo "  SKIP (missing): $path"
+      continue
+    fi
+    local old_ver
+    old_ver=$(read_sed_field "$fullpath" "$pattern")
+    if [[ -z "$old_ver" ]]; then
+      echo "  SKIP (pattern not found): $path"
+      continue
+    fi
+    write_sed_field "$fullpath" "$pattern" "$old_ver" "$new_version"
+    printf "  %-45s  %s -> %s\n" "$path (sed)" "$old_ver" "$new_version"
+  done < <(declared_sed_files)
 
   echo ""
   echo "Done. Running audit to check for missed files..."

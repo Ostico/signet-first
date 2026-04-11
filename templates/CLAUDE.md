@@ -1,5 +1,5 @@
 # Memory-First Protocol
-<!-- signet-first-version: 2.0.0 -->
+<!-- signet-first-version: 2.0.1 -->
 
 These rules enforce memory-aware behavior for AI coding agents.
 If `signet_memory_search` is available, use Signet as the primary memory system.
