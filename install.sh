@@ -14,7 +14,7 @@
 #   curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/install.sh | bash
 #
 # Options (environment variables):
-#   HARNESS=opencode|claude-code|codex   Force harness (default: auto-detect)
+#   HARNESS=opencode|claude-code|codex|cursor|gemini|copilot   Force harness (default: auto-detect)
 #   SKIP_SIGNET=1                        Skip Signet install (already have it)
 #   SKILL_ONLY=1                         Skip everything, just install the skill
 #
@@ -52,18 +52,33 @@ detect_harness() {
     HARNESS="claude-code"
   elif [ -d "$HOME/.agents/skills" ]; then
     HARNESS="codex"
+  elif [ -d "$HOME/.cursor" ]; then
+    HARNESS="cursor"
+  elif [ -d "$HOME/.gemini" ]; then
+    HARNESS="gemini"
   else
     HARNESS="opencode"
     warn "No harness directory found — defaulting to opencode"
   fi
 }
 
-skills_dir() {
+clone_dir() {
   case "$HARNESS" in
     opencode)    echo "$HOME/.config/opencode/skills/signet-first" ;;
     claude-code) echo "$HOME/.claude/skills/signet-first" ;;
-    codex)       echo "$HOME/.agents/skills/signet-first" ;;
+    codex)       echo "$HOME/.codex/signet-first" ;;
+    cursor)      echo "$HOME/.cursor/skills/signet-first" ;;
+    gemini)      echo "$HOME/.gemini/signet-first" ;;
+    copilot)     echo "$HOME/.copilot/skills/signet-first" ;;
     *)           echo "$HOME/.config/opencode/skills/signet-first" ;;
+  esac
+}
+
+discovery_dir() {
+  case "$HARNESS" in
+    codex)  echo "$HOME/.agents/skills/signet-first" ;;
+    gemini) echo "$HOME/.gemini/extensions/signet-first" ;;
+    *)      echo "" ;;
   esac
 }
 
@@ -183,7 +198,7 @@ install_skill() {
   step "3/3" "signet-first skill + plugin"
 
   local DIR
-  DIR=$(skills_dir)
+  DIR=$(clone_dir)
 
   if [ -d "$DIR/.git" ]; then
     ok "signet-first already cloned at $DIR"
@@ -206,14 +221,25 @@ install_skill() {
     return 1
   fi
 
-  if [ "$HARNESS" = "opencode" ]; then
-    register_opencode_plugin
+  # Create discovery symlink when clone path != discovery path
+  local DISC
+  DISC=$(discovery_dir)
+  if [ -n "$DISC" ] && [ "$DISC" != "$DIR" ]; then
+    local DISC_PARENT
+    DISC_PARENT=$(dirname "$DISC")
+    mkdir -p "$DISC_PARENT"
+    if [ -L "$DISC" ]; then
+      ok "Discovery symlink already exists ($DISC)"
+    elif [ -d "$DISC" ]; then
+      warn "Directory already exists at $DISC — skipping symlink"
+    else
+      ln -sf "$DIR" "$DISC"
+      ok "Symlinked $DIR → $DISC"
+    fi
   fi
 
-  if [ "$HARNESS" = "codex" ]; then
-    mkdir -p "$HOME/.agents/skills"
-    ln -sf "$DIR" "$HOME/.agents/skills/signet-first"
-    ok "Codex symlink created"
+  if [ "$HARNESS" = "opencode" ]; then
+    register_opencode_plugin
   fi
 
   if [ "$HARNESS" = "claude-code" ]; then
@@ -223,6 +249,25 @@ install_skill() {
     echo "      /plugin marketplace add Ostico/signet-first"
     echo "      /plugin install signet-first@signet-first-dev"
     echo "    Then restart Claude Code."
+  fi
+
+  if [ "$HARNESS" = "cursor" ]; then
+    echo ""
+    warn "Cursor requires manual plugin installation."
+    echo "    In Cursor, open Settings > Rules and verify the plugin is loaded."
+    echo "    Or run in Cursor chat:"
+    echo "      /plugin install $DIR"
+  fi
+
+  if [ "$HARNESS" = "copilot" ]; then
+    local COPILOT_PLUGIN_DIR="$HOME/.copilot/installed-plugins/_direct/signet-first"
+    if [ -d "$DIR" ] && [ ! -L "$COPILOT_PLUGIN_DIR" ]; then
+      mkdir -p "$HOME/.copilot/installed-plugins/_direct"
+      ln -sf "$DIR" "$COPILOT_PLUGIN_DIR"
+      ok "Copilot CLI plugin symlinked"
+    elif [ -L "$COPILOT_PLUGIN_DIR" ]; then
+      ok "Copilot CLI plugin symlink already exists"
+    fi
   fi
 }
 
@@ -276,7 +321,7 @@ summary() {
   fi
 
   local DIR
-  DIR=$(skills_dir)
+  DIR=$(clone_dir)
   if [ -f "$DIR/SKILL.md" ]; then
     ok "signet-first skill installed ($HARNESS)"
     if [ -d "$DIR/.git" ]; then
@@ -303,6 +348,18 @@ summary() {
     warn "Register the plugin in Claude Code:"
     echo "    /plugin marketplace add Ostico/signet-first"
     echo "    /plugin install signet-first@signet-first-dev"
+  fi
+
+  if [ "$HARNESS" = "cursor" ]; then
+    warn "Verify the plugin in Cursor Settings > Rules."
+  fi
+
+  if [ "$HARNESS" = "gemini" ]; then
+    echo "  Verify: gemini extensions list"
+  fi
+
+  if [ "$HARNESS" = "copilot" ]; then
+    echo "  Verify: copilot plugin list"
   fi
 
   echo ""
