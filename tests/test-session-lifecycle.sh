@@ -51,7 +51,7 @@ test_start "self-healing: fallback stores result for next time"
 sid=$(inject_session "ses_selfheal_1")
 mid=$(inject_message "$sid" "assistant" 14000000)
 inject_tool_call "$sid" "$mid" "recall" '{"query":"redis config matecat"}' "" 14000100
-inject_text "$sid" "$mid" "SIGNET-FIRST FALLBACK: Signet returned insufficient results for redis config. Falling back to markdown files." 14000200
+inject_text "$sid" "$mid" "Memory returned no results for \"redis config\". Checking project files." 14000200
 inject_tool_call "$sid" "$mid" "read" '{"filePath":"config/redis.yml"}' "host: 127.0.0.1, port: 6379" 14000300
 inject_tool_call "$sid" "$mid" "signet_memory_store" \
     '{"content":"Matecat redis config: host=127.0.0.1 port=6379 db=0","type":"fact","scope":"matecat"}' \
@@ -68,7 +68,7 @@ inject_tool_call "$sid2" "$mid2" "recall" '{"query":"redis config matecat"}' \
     "Matecat redis config: host=127.0.0.1 port=6379 db=0" 15000100
 
 session_text=$(get_session_text "$sid2")
-if echo "$session_text" | grep -qi "SIGNET-FIRST FALLBACK"; then
+if echo "$session_text" | grep -qi "Memory returned no results"; then
     _fail "second session still falls back — self-heal did not work"
 else
     _pass "second session answered from Signet — no fallback needed"

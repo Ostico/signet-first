@@ -52,24 +52,24 @@ fi
 
 # ── Test 4: fallback warning present in output ────────────────
 
-test_start "fallback warning in assistant text"
+test_start "fallback notice in assistant text"
 sid=$(inject_session "ses_fallback_warning")
 mid=$(inject_message "$sid" "assistant" 5000000)
 inject_tool_call "$sid" "$mid" "recall" '{"query":"deploy xyzzy"}' "" 5000100
-inject_text "$sid" "$mid" "SIGNET-FIRST FALLBACK: No relevant memories found. Falling back to file search." 5000200
+inject_text "$sid" "$mid" "Memory returned no results for \"deploy xyzzy\". Checking project files." 5000200
 
 session_text=$(get_session_text "$sid")
-assert_contains "$session_text" "SIGNET-FIRST FALLBACK" "fallback warning displayed"
+assert_contains "$session_text" "Memory returned no results" "fallback notice displayed"
 
 # ── Test 5: no fallback warning when Signet answers ───────────
 
-test_start "no fallback warning when Signet has the answer"
+test_start "no fallback notice when memory has the answer"
 sid=$(inject_session "ses_no_fallback")
 mid=$(inject_message "$sid" "assistant" 6000000)
 inject_tool_call "$sid" "$mid" "recall" '{"query":"build command"}' "echo no build needed" 6000100
 inject_text "$sid" "$mid" "The build command is: echo no build needed" 6000200
 
 session_text=$(get_session_text "$sid")
-assert_not_contains "$session_text" "SIGNET-FIRST FALLBACK" "no false fallback warning"
+assert_not_contains "$session_text" "Memory returned no results" "no false fallback notice"
 
 print_summary
