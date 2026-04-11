@@ -6,21 +6,21 @@ falling back to markdown files.
 
 ## What It Does
 
-**Store protocol** — After every investigation, analysis, decision, or discovery, the agent
-immediately stores a synthesized conclusion in Signet via `signet_memory_store`.
+**Search before acting** — When the agent needs context from previous work, it searches
+memory first (Signet when available, native memory otherwise). Only if no result answers
+the query does it fall back to project files.
 
-**Search protocol** — When the agent needs context from previous work, it searches Signet first.
-Only if no result directly answers the query does it fall back to markdown files.
+**Store durable knowledge** — After investigations, decisions, and discoveries, the agent
+stores synthesized conclusions in memory for future sessions.
 
-**Fallback warning** — Every fallback to markdown files triggers a mandatory visible warning:
-```
-⚠️ SIGNET-FIRST FALLBACK: Signet returned insufficient results for "<query>".
-Falling back to markdown files. This may indicate missing memories — storing
-results after retrieval.
-```
+**Session continuity** — Each non-trivial session ends with a structured summary. The next
+session searches for it before doing anything else, eliminating cold starts.
 
-**Self-healing** — After any fallback, the agent stores the retrieved information in Signet so
-the same fallback won't repeat.
+**Progressive enhancement** — All three behaviors work with any memory backend. Signet
+users get scoped search, typed storage, and knowledge graph traversal. Non-Signet users
+get memory discipline through their platform's native system. On platforms with no writable
+memory, only the search-before-act discipline (checking project files before assuming)
+applies.
 
 ## Why
 
@@ -193,7 +193,7 @@ the Signet daemon's automatic extraction pipeline.
 
 ## Test Suite
 
-5 suites, 43 assertions, zero API calls.
+5 suites, 47 assertions, zero API calls.
 
 ```bash
 bash tests/run-all.sh
