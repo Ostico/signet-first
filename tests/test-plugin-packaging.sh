@@ -25,18 +25,19 @@ else
     _fail "version drift detected: $DRIFT_OUTPUT"
 fi
 
-test_start "all 5 platform configs declare same version"
+test_start "all 6 platform configs declare same version"
 VERSIONS=$(
     jq -r '.version' "$SKILL_DIR/package.json"
     jq -r '.version' "$SKILL_DIR/.claude-plugin/plugin.json"
     jq -r '.version' "$SKILL_DIR/.cursor-plugin/plugin.json"
+    jq -r '.version' "$SKILL_DIR/.plugin/plugin.json"
     jq -r '.plugins[0].version' "$SKILL_DIR/.claude-plugin/marketplace.json"
     jq -r '.version' "$SKILL_DIR/gemini-extension.json"
 )
 UNIQUE=$(echo "$VERSIONS" | sort -u | wc -l | tr -d ' ')
 if [ "$UNIQUE" -eq 1 ]; then
     VER=$(echo "$VERSIONS" | head -1)
-    _pass "all 5 files at $VER"
+    _pass "all 6 files at $VER"
 else
     _fail "found $UNIQUE different versions"
 fi
@@ -99,9 +100,13 @@ for f in \
     ".claude-plugin/plugin.json" \
     ".claude-plugin/marketplace.json" \
     ".cursor-plugin/plugin.json" \
+    ".cursor-plugin/INSTALL.md" \
+    ".plugin/plugin.json" \
+    ".copilot/INSTALL.md" \
     ".codex/INSTALL.md" \
     ".opencode/INSTALL.md" \
     ".opencode/plugins/signet-first-bootstrap.js" \
+    ".gemini/INSTALL.md" \
     "hooks/session-start" \
     "hooks/run-hook.cmd" \
     "hooks/hooks.json" \
@@ -117,7 +122,7 @@ for f in \
     fi
 done
 if [ "$MISSING" -eq 0 ]; then
-    _pass "all 15 platform files present"
+    _pass "all 19 platform files present"
 fi
 
 test_start "session-start hook is executable"
