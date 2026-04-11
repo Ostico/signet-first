@@ -1,0 +1,19 @@
+{
+  "name": "signet-first",
+  "description": "Memory-first protocol for AI coding agents — search memory before acting, store durable conclusions, maintain session continuity",
+  "version": "2.0.1",
+  "author": {
+    "name": "Domenico Lupinetti",
+    "email": "ostico@gmail.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "signet",
+    "memory",
+    "memory-first",
+    "skills",
+    "agent-memory"
+  ],
+  "skills": ["./"],
+  "hooks": "hooks/hooks.json"
+}

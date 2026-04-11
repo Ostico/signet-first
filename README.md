@@ -84,11 +84,22 @@ It adds three protocols:
 
 ## Installation
 
-Installation differs by platform. The fastest path: **tell your agent to install it.**
+Installation differs by platform. The fastest path for all platforms:
 
-### Any platform (tell your agent)
+### All platforms (one-liner — recommended)
 
-Paste this into your agent chat:
+Installs Signet + the skill + registers the plugin. Auto-detects your harness.
+
+```bash
+curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/install.sh | bash
+```
+
+Options: `HARNESS=opencode|claude-code|codex|cursor|gemini|copilot`, `SKIP_SIGNET=1`, `SKILL_ONLY=1` (pass as env vars).
+
+### Tell your agent
+
+Paste the appropriate snippet into your agent chat. The agent will fetch the platform-specific
+install guide and follow it:
 
 **OpenCode:**
 ```
@@ -105,76 +116,91 @@ Install signet-first: fetch https://raw.githubusercontent.com/Ostico/signet-firs
 Install signet-first: fetch https://raw.githubusercontent.com/Ostico/signet-first/refs/heads/master/.codex/INSTALL.md and follow the instructions.
 ```
 
-The agent will clone the repo, run the installer, and tell you which commands
-to run yourself (if any). You just restart.
+**Cursor:**
+```
+Install signet-first: fetch https://raw.githubusercontent.com/Ostico/signet-first/refs/heads/master/.cursor-plugin/INSTALL.md and follow the instructions.
+```
+
+**GitHub Copilot CLI:**
+```
+Install signet-first: fetch https://raw.githubusercontent.com/Ostico/signet-first/refs/heads/master/.copilot/INSTALL.md and follow the instructions.
+```
+
+**Gemini CLI:**
+```
+Install signet-first: fetch https://raw.githubusercontent.com/Ostico/signet-first/refs/heads/master/.gemini/INSTALL.md and follow the instructions.
+```
+
+### OpenCode
+
+**Detailed docs:** [.opencode/INSTALL.md](.opencode/INSTALL.md)
+
+```bash
+curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/install.sh | HARNESS=opencode bash
+```
+
+Or add the plugin directly to `opencode.json`:
+```json
+{
+  "plugin": ["signet-first@git+https://github.com/Ostico/signet-first.git"]
+}
+```
 
 ### Claude Code
 
-**Manual (user types these):**
+**Detailed docs:** [.claude-plugin/INSTALL.md](.claude-plugin/INSTALL.md)
 
 ```bash
+curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/install.sh | HARNESS=claude-code bash
+```
+
+Then register the plugin (user must type these in Claude Code):
+```
 /plugin marketplace add Ostico/signet-first
 /plugin install signet-first@signet-first-dev
 ```
 
-**Agent-assisted (paste into chat):**
-
-```
-Install signet-first: fetch https://raw.githubusercontent.com/Ostico/signet-first/refs/heads/master/.claude-plugin/INSTALL.md and follow the instructions.
-```
-
 ### Cursor
 
-In Cursor Agent chat:
+**Detailed docs:** [.cursor-plugin/INSTALL.md](.cursor-plugin/INSTALL.md)
 
-```text
-/add-plugin signet-first
+```bash
+curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/install.sh | HARNESS=cursor bash
 ```
-
-Or search for "signet-first" in the plugin marketplace.
-
-### OpenCode
-
-Tell OpenCode:
-
-```
-Fetch and follow instructions from https://raw.githubusercontent.com/Ostico/signet-first/refs/heads/master/.opencode/INSTALL.md
-```
-
-**Detailed docs:** [docs/README.opencode.md](docs/README.opencode.md)
 
 ### Codex
 
-Tell Codex:
+**Detailed docs:** [.codex/INSTALL.md](.codex/INSTALL.md)
 
+```bash
+curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/install.sh | HARNESS=codex bash
 ```
-Fetch and follow instructions from https://raw.githubusercontent.com/Ostico/signet-first/refs/heads/master/.codex/INSTALL.md
-```
-
-**Detailed docs:** [docs/README.codex.md](docs/README.codex.md)
 
 ### GitHub Copilot CLI
 
+**Detailed docs:** [.copilot/INSTALL.md](.copilot/INSTALL.md)
+
 ```bash
-copilot plugin marketplace add Ostico/signet-first
-copilot plugin install signet-first@signet-first-dev
+copilot plugin install Ostico/signet-first
+```
+
+Or use the full installer:
+```bash
+curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/install.sh | HARNESS=copilot bash
 ```
 
 ### Gemini CLI
+
+**Detailed docs:** [.gemini/INSTALL.md](.gemini/INSTALL.md)
 
 ```bash
 gemini extensions install https://github.com/Ostico/signet-first
 ```
 
-### All platforms (one-liner)
-
-Installs Signet + the skill + registers the plugin. Auto-detects your harness.
-
+Or use the full installer:
 ```bash
-curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/install.sh | bash
+curl -sL https://raw.githubusercontent.com/ostico/signet-first/master/install.sh | HARNESS=gemini bash
 ```
-
-Options: `HARNESS=claude-code`, `SKIP_SIGNET=1`, `SKILL_ONLY=1` (pass as env vars).
 
 ### Verify Installation
 
@@ -194,11 +220,14 @@ covers all queries. For Signet setup details, see [SIGNET_SETUP.md](SIGNET_SETUP
 ```bash
 # OpenCode plugin — updates automatically on restart
 
-# Git clone
-cd ~/.config/opencode/skills/signet-first && git pull
+# Git clone (any platform)
+cd <skills-dir>/signet-first && git pull
 
 # Gemini CLI
 gemini extensions update signet-first
+
+# Copilot CLI
+copilot plugin update signet-first
 ```
 
 Check [CHANGELOG.md](CHANGELOG.md) for what changed between versions.
@@ -213,7 +242,7 @@ the Signet daemon's automatic extraction pipeline.
 
 ## Test Suite
 
-5 suites, 47 assertions, zero API calls.
+5 suites, 48 assertions, zero API calls.
 
 ```bash
 bash tests/run-all.sh
