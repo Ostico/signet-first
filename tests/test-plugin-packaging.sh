@@ -78,17 +78,17 @@ else
 fi
 
 test_start "hook: skill content present after stripping"
-if echo "$CONTENT" | grep -q "Signet-First Memory Protocol"; then
+if echo "$CONTENT" | grep -q "Memory-First Protocol"; then
     _pass "skill content found"
 else
     _fail "skill content missing"
 fi
 
-test_start "hook: mandatory header present"
-if echo "$CONTENT" | grep -q "MANDATORY"; then
-    _pass "MANDATORY header present"
+test_start "hook: Rules section present"
+if echo "$CONTENT" | grep -q "## Rules"; then
+    _pass "Rules section present"
 else
-    _fail "MANDATORY header missing"
+    _fail "Rules section missing"
 fi
 
 # ── File structure checks ────────────────────────────────────
@@ -148,6 +148,24 @@ if jq -e '.hooks.SessionStart[0].hooks[0].command' "$SKILL_DIR/hooks/hooks.json"
     _pass "hooks.json → run-hook.cmd"
 else
     _fail "hooks.json does not reference run-hook.cmd"
+fi
+
+# ── Template version consistency ─────────────────────────────
+
+test_start "templates/CLAUDE.md version matches package.json"
+pkg_version=$(jq -r '.version' "$SKILL_DIR/package.json")
+tmpl_version=$(grep -oP '(?<=<!-- signet-first-version: )[\d.]+' "$SKILL_DIR/templates/CLAUDE.md" 2>/dev/null || echo "MISSING")
+if [ "$pkg_version" = "$tmpl_version" ]; then
+    _pass "template version ($tmpl_version) matches package.json ($pkg_version)"
+else
+    _fail "version mismatch: package.json=$pkg_version, template=$tmpl_version"
+fi
+
+test_start "templates/CLAUDE.md exists"
+if [ -f "$SKILL_DIR/templates/CLAUDE.md" ]; then
+    _pass "template file present"
+else
+    _fail "templates/CLAUDE.md missing"
 fi
 
 # ── Summary ───────────────────────────────────────────────────
