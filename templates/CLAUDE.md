@@ -1,5 +1,5 @@
 # Memory-First Protocol
-<!-- signet-first-version: 2.0.1 -->
+<!-- signet-first-version: 2.0.3 -->
 
 These rules enforce memory-aware behavior for AI coding agents.
 If `signet_memory_search` is available, use Signet as the primary memory system.
@@ -13,11 +13,17 @@ Otherwise, use your native memory capabilities (MEMORY.md, auto memory, etc.).
    Preferred: `signet_memory_search(query, type, limit)`. Fallback: MEMORY.md or native recall.
 
 2. **Search memory at session start.** Look for recent session summaries before touching files.
-   Skip for: the user immediately gives a specific, self-contained task.
-   Narrow to daily-log search for: continuation requests ("keep going," "pick up where we left off").
+   Before searching explicitly, check whether memory context is already available in your session.
+   If it covers recent summaries and project-relevant notes, skip the explicit search.
+   Search explicitly for: continuation requests (daily-log by project scope), project-specific
+   recall the available context lacks, or when no memory context is available at all.
+   Skip for: self-contained tasks; memory context already covers the current project.
 
-3. **Store conclusions after investigations.** After multi-step investigations, decisions,
-   or debugging, store a synthesized conclusion. Search for duplicates first — update, don't duplicate.
+3. **Store conclusions BEFORE composing your answer.** After multi-step investigations, decisions,
+   or debugging, store the synthesized conclusion in memory FIRST — before writing the user-facing
+   response. Sequence: investigate → synthesize → store → answer. If you are writing a response
+   that contains a novel conclusion and have not yet stored it, stop, store it, then continue.
+   Search for duplicates first — update, don't duplicate.
    When the conclusion is a user-stated hard constraint or critical procedure, mark it with
    `importance: 1.0` and tag `critical` (see Pinning note below).
    Skip for: trivial Q&A under 3 exchanges; single lookups with no novel finding.
@@ -25,8 +31,10 @@ Otherwise, use your native memory capabilities (MEMORY.md, auto memory, etc.).
    **Pinning note:** Signet's MCP tools do not yet expose the `pinned` parameter.
    Use `importance: 1.0` + tag `critical` as the workaround until a Signet release adds it.
 
-4. **Write a session summary before ending non-trivial sessions.**
-   Skip for: sessions where no investigation, decision, or multi-file exploration occurred.
+4. **Write a structured session handoff before ending non-trivial sessions.**
+   Store a daily-log with: accomplishments, decisions made, unfinished work, blockers —
+   task-oriented synthesis for the next session to resume without re-reading the transcript.
+   Skip for: sessions with no investigation/decision/exploration; sessions under 3 exchanges.
 
 5. **When memory returns no results, say so in one sentence and proceed.**
    `Memory returned no results for "<query>". Checking project files.`

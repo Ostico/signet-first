@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.0.3
+
+### Behavioral Changes
+
+- **Rule 2 — Context-aware session start** — Before firing an explicit memory search at session start, the agent now checks whether memory context is already available in the session (injected system prompt, instruction files, or prior tool output). If the available context covers recent summaries and project-relevant notes, the explicit search is skipped. Explicit search is reserved for: continuation requests (daily-log by project scope), project-specific recall not covered by available context, or when no memory context is available. Platform-agnostic — works regardless of how memory context arrives.
+- **Rule 4 — Structured session handoff** — Renamed from "session summary" to "structured session handoff." Now specifies a 4-item structure: accomplishments, decisions, unfinished work, blockers. Added skip clause for sessions under 3 exchanges. Platform-agnostic — describes what the agent produces, not what any backend does automatically.
+- **Test 5 updated** — Replaced the "MEMORY.md read before recall is a violation" test with a test validating the new Rule 2 semantics: sessions with injected memory context should not fire redundant explicit searches.
+
+## 2.0.2
+
+### Behavioral Changes
+
+- **Rule 3 — Store-before-answer** — Restructured from "store conclusions after investigations" to "store conclusions BEFORE composing your answer." Makes memory storage a prerequisite to responding, not an afterthought. Adds an explicit 4-step sequence: investigate → synthesize → store → answer. Includes a self-interrupt clause: "If you find yourself writing a response that contains a novel conclusion and have not yet stored it — stop, store it, then continue." This addresses the observed failure mode where LLMs optimize for answering the user and skip the storage step when it comes after the response.
+
 ## 2.0.1
 
 ### Clarifications

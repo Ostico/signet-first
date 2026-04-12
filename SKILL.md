@@ -31,15 +31,29 @@ Before executing any build, test, lint, deploy, or project-specific command, sea
 
 Search for recent session summaries and unfinished work before touching files or running commands.
 
+**Before searching explicitly, check whether memory context is already available in your session** (injected system prompt, instruction files, or prior tool output). If the available context already contains recent session summaries and project-relevant notes, an explicit search is redundant — use what you have.
+
+Search explicitly when:
+- **Continuation request** — user says "keep going," "pick up where we left off." Search for `type: daily-log` scoped to the current project for the last unfinished work item.
+- **Project-specific recall** — the available context is global or doesn't cover the project you're working on now. Search with a project scope filter.
+- **No memory context available** — your session started with no injected memory context at all. Fall back to an explicit search.
+
 **Skip for:**
 - The user immediately gives a specific, self-contained task with full context (e.g., "fix the typo on line 42 of app.py").
+- Memory context already in your session covers the current project's recent work.
 
-**Narrow to daily-log search for:**
-- Continuation requests ("keep going with the refactor," "pick up where we left off") — these need targeted `daily-log` lookup, not a full memory search.
+### Rule 3: Store conclusions BEFORE composing your answer
 
-### Rule 3: Store conclusions after investigations and decisions
+When you have completed an investigation, decision, debugging session, or discovery and are ready to respond to the user, store the synthesized conclusion in memory **first** — before writing the user-facing answer.
 
-After any multi-step investigation, architecture decision, debugging root-cause analysis, or discovery of a codebase pattern, store a synthesized conclusion in memory.
+This is a prerequisite, not an afterthought. The sequence is:
+
+1. **Investigate** — read files, run commands, search, analyze.
+2. **Synthesize** — form your conclusion internally.
+3. **Store** — call `signet_memory_store` (or native equivalent) with the conclusion.
+4. **Answer** — now compose your response to the user.
+
+If you find yourself writing a response that contains a novel conclusion, finding, or decision and you have not yet stored it — **stop, store it, then continue writing.**
 
 **Store conclusions, not transcripts.**
 - Bad: "User said they want X and I looked at file Y and then checked Z."
@@ -48,16 +62,24 @@ After any multi-step investigation, architecture decision, debugging root-cause 
 When the conclusion is a user-stated hard constraint or critical procedure, pin it (see Pinning below).
 
 **Skip for:**
-- Trivial Q&A (under 3 exchanges).
+- Trivial Q&A (under 3 exchanges with no novel finding).
 - Single lookups that surfaced no novel finding.
-- Information already in memory (search first).
+- Information already in memory (search first — Rule 5).
 
-### Rule 4: Write a session summary before ending non-trivial sessions
+### Rule 4: Write a structured session handoff before ending non-trivial sessions
 
-Store a `daily-log` memory with: what was accomplished, decisions made, unfinished work, blockers.
+Store a `daily-log` memory that enables the next session to resume without re-reading the full transcript. It must contain:
+
+1. **Accomplishments** — what was completed (with file paths or commit refs when applicable).
+2. **Decisions made** — choices that constrain future work (these should also be stored as separate `decision` memories per Rule 3).
+3. **Unfinished work** — what's left, with enough context to resume cold.
+4. **Blockers** — anything preventing progress (waiting on user, external dependency, unclear requirement).
+
+This is task-oriented synthesis — what matters for the next session, not a transcript of what happened.
 
 **Skip for:**
 - Sessions where no investigation, decision, or multi-file exploration occurred (quick question, single lookup, trivial fix).
+- Sessions under 3 exchanges total.
 
 ### Rule 5: Search for duplicates before storing
 

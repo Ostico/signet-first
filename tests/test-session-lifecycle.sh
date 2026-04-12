@@ -86,20 +86,27 @@ inject_tool_call "$sid" "$mid" "bash" '{"command":"git status"}' "clean" 1600020
 
 assert_tool_before "$sid" "recall" "bash" "daily-log searched before any action"
 
-# ── Test 5: violation — session starts with file read ─────────
+# ── Test 5: session with injected context skips redundant search ──
 
-test_start "violation: session starts by reading MEMORY.md"
-sid=$(inject_session "ses_start_violation")
+test_start "session with injected context: no redundant memory search"
+sid=$(inject_session "ses_start_with_context")
 mid=$(inject_message "$sid" "assistant" 17000000)
-inject_tool_call "$sid" "$mid" "read" '{"filePath":"MEMORY.md"}' "memory content" 17000100
-inject_tool_call "$sid" "$mid" "recall" '{"query":"previous work"}' "found" 17000200
+# Agent has memory context already (e.g., injected by platform) — goes straight to work
+inject_tool_call "$sid" "$mid" "bash" '{"command":"git status"}' "clean" 17000100
+inject_tool_call "$sid" "$mid" "edit" '{"filePath":"src/app.ts"}' "edited" 17000200
 
-ts_read=$(first_tool_timestamp "$sid" "read")
-ts_recall=$(first_tool_timestamp "$sid" "recall")
-if [ -n "$ts_read" ] && [ -n "$ts_recall" ] && [ "$ts_read" -lt "$ts_recall" ]; then
-    _pass "violation detected: read MEMORY.md ($ts_read) before recall ($ts_recall)"
+# Verify NO recall/signet_memory_search was fired (context was sufficient)
+search_count=$(sqlite3 "$OPENCODE_DB" "
+    SELECT COUNT(*) FROM part p
+    WHERE p.session_id = '$sid'
+      AND json_extract(p.data, '$.type') = 'tool'
+      AND (json_extract(p.data, '$.tool') = 'recall'
+           OR json_extract(p.data, '$.tool') = 'signet_memory_search');
+" 2>/dev/null)
+if [ "$search_count" -eq 0 ]; then
+    _pass "no redundant memory search when context already available"
 else
-    _fail "expected read before recall but got read=$ts_read recall=$ts_recall"
+    _fail "expected 0 memory searches with injected context, found $search_count"
 fi
 
 # ── Test 6: daily-log contains required fields ────────────────
