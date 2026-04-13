@@ -1,5 +1,5 @@
 # Memory-First Protocol
-<!-- signet-first-version: 2.0.3 -->
+<!-- signet-first-version: 2.0.4 -->
 
 These rules enforce memory-aware behavior for AI coding agents.
 If `signet_memory_search` is available, use Signet as the primary memory system.
@@ -24,12 +24,10 @@ Otherwise, use your native memory capabilities (MEMORY.md, auto memory, etc.).
    response. Sequence: investigate → synthesize → store → answer. If you are writing a response
    that contains a novel conclusion and have not yet stored it, stop, store it, then continue.
    Search for duplicates first — update, don't duplicate.
-   When the conclusion is a user-stated hard constraint or critical procedure, mark it with
-   `importance: 1.0` and tag `critical` (see Pinning note below).
+   When the conclusion is a user-stated hard constraint or critical procedure, set
+   `pinned: true` alongside `importance: 1.0` and tag `critical`.
    Skip for: trivial Q&A under 3 exchanges; single lookups with no novel finding.
-   Preferred: `signet_memory_store(content, type, tags, importance)`. Fallback: native memory.
-   **Pinning note:** Signet's MCP tools do not yet expose the `pinned` parameter.
-   Use `importance: 1.0` + tag `critical` as the workaround until a Signet release adds it.
+   Preferred: `signet_memory_store(content, type, tags, importance, pinned)`. Fallback: native memory.
 
 4. **Write a structured session handoff before ending non-trivial sessions.**
    Store a daily-log with: accomplishments, decisions made, unfinished work, blockers —

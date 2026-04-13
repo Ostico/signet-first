@@ -59,7 +59,7 @@ If you find yourself writing a response that contains a novel conclusion, findin
 - Bad: "User said they want X and I looked at file Y and then checked Z."
 - Good: "Project uses read-through caching with XFetch early recomputation in DaoCacheTrait."
 
-When the conclusion is a user-stated hard constraint or critical procedure, pin it (see Pinning below).
+When the conclusion is a user-stated hard constraint or critical procedure, set `pinned: true` alongside `importance: 1.0` and tag `critical` (see Pinning below).
 
 **Skip for:**
 - Trivial Q&A (under 3 exchanges with no novel finding).
@@ -168,9 +168,7 @@ Memories decay at `0.95^days` by default. Some knowledge must never decay:
 - Critical project procedures (deploy steps, release process)
 - Identity-level preferences (communication style, tool choices)
 
-For these, set `importance: 1.0` and add the tag `critical` when storing. This ensures the memory ranks highest in retrieval and signals its permanent nature.
-
-> **Known limitation (Signet ≤ 0.x):** The Signet daemon supports a `pinned` flag internally (database column, REST API, CLI `--critical` flag), but the MCP tool schemas for `signet_memory_store` and `signet_memory_modify` do not yet expose the `pinned` parameter. Until a Signet release adds it to the MCP interface, `importance: 1.0` + tag `critical` is the agent-accessible workaround. Pinned memories are exempt from decay and score `effectiveScore = 1.0` regardless of age.
+For these, set `pinned: true` when storing via `signet_memory_store` or `signet_memory_modify`. Pinned memories are exempt from decay and score `effectiveScore = 1.0` regardless of age. Setting `importance: 1.0` and tag `critical` alongside pinning is still recommended for search ranking and semantic clarity.
 
 Do not pin everything. Only pin knowledge that is both critical and stable (unlikely to change). Discoveries, analysis results, and session events should not be pinned — let them decay naturally.
 
